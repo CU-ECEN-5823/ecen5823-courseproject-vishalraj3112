@@ -1,4 +1,4 @@
-# S20-final-project
+# S23-final-project
 This repository contains the final project submissions made by Vishal Raj IoT Embedded Firmware (Spring-2023) class.
 
 ## Wiki Page
