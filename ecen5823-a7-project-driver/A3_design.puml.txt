@@ -1,0 +1,38 @@
+@startuml
+participant LETIMER0 as lettimer0
+participant LETIMER0_ISR as lettimer0_ISR
+participant main as main
+participant scheduler as scheduler
+participant I2C0_ISR as i2c0_isr
+participant I2C0 as i2c
+
+main -> main: Go to sleep()
+lettimer0 -> lettimer0_ISR: UF IRQ/Wake up MCU
+group LETIMER0_IRQ_Handler
+ lettimer0_ISR -> lettimer0_ISR: Determined IRQ, Clear IRQ
+ lettimer0_ISR -> lettimer0_ISR: call schedulerSetEventUF()
+ lettimer0_ISR -> scheduler: set UF_event
+ scheduler -> scheduler: read-modify-write to \n set UF event
+end
+lettimer0_ISR -> main: return
+i2c-> i2c0_isr: I2C Complete/Wake up MCU
+group I2C0_IRQ_Handler
+ i2c0_isr-> i2c0_isr: Determined IRQ, Clear IRQ
+ i2c0_isr-> i2c0_isr: call schedulerSetEventI2C()
+ i2c0_isr-> scheduler: set UF_event
+ scheduler -> scheduler: read-modify-write to \n set I2C event
+end
+i2c0_isr-> main: return
+group main
+ main->main: call getNextEvent()
+ group switch(event)
+  alt case:Letimer0_UF
+   main->main: read_temp_from_si7021();
+  else case:I2C0_Comp
+   main->main: do_something()
+  else case: x_event
+   main->main: x()
+  end
+ end
+end
+@enduml
