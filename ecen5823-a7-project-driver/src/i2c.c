@@ -248,6 +248,63 @@ int max_sh_write_cmd(uint8_t *txbuf,
   return (int) status_byte;
 }
 
+int get_device_mode(uint8_t* device_mode){
+
+  uint8_t ByteSeq[] = {0x02, 0x00}, rxbuf[2] = {0};
+
+  //makes no sense reading the status if its interrupt driven
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+
+  *device_mode = rxbuf[1];
+
+  return status;
+}
+
+int get_sh_version(uint8_t* sh_version){
+
+  uint8_t ByteSeq[] = {0xFF, 0x03}, rxbuf[4] = {0};
+
+  //makes no sense reading the status if its interrupt driven
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+
+  sh_version[0] = rxbuf[1];
+  sh_version[1] = rxbuf[2];
+  sh_version[2] = rxbuf[3];
+
+  return status;
+}
+
+int get_register_attributes(uint8_t* register_attr){
+
+  uint8_t ByteSeq[] = {0x42, 0x03}, rxbuf[3] = {0};
+
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+
+  register_attr[0] = rxbuf[1];
+  register_attr[1] = rxbuf[2];
+
+  return status;
+}
+
+int read_all_max_reg(uint8_t* all_max_reg){
+
+  uint8_t ByteSeq[] = {0x43, 0x03};
+
+  //Might fault on this
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &all_max_reg[0], sizeof(all_max_reg), DEFAULT_CMD_SLEEP_US);
+
+  return status;
+}
+
+int read_single_max_reg(uint8_t reg_no, uint8_t* reg_val){
+
+  uint8_t ByteSeq[] = {0x41, 0x03, reg_no};
+
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &reg_val[0], sizeof(reg_val), DEFAULT_CMD_SLEEP_US);
+
+  return status;
+}
+
 int get_sensor_hub_status(){
 
   uint8_t ByteSeq[] = {0x00, 0x00}, rxbuf[2] = {0};

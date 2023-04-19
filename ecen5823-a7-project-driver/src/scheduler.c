@@ -302,6 +302,8 @@ void discovery_state_machine(sl_bt_msg_t *evt){
 //
 //}
 
+uint8_t all_max_registers[255] = {0};
+
 void max_hub_read_polled(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
@@ -337,6 +339,45 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
      }else{
          LOG_ERROR("Max Sensor Hub: Sensor 1 hub error = %d\r\n", (unsigned int) status);
      }
+
+//     uint8_t device_mode;
+//     status = get_device_mode(&device_mode);
+//     if(status == 0x00){
+//         LOG_INFO("Device mode = 0x%X\r\n", device_mode);
+//     }else{
+//         LOG_ERROR("Device mode read error = %d\r\n", (unsigned int) status);
+//     }
+//
+//     uint8_t sh_version[3];
+//     status = get_sh_version(sh_version);
+//     if(status == 0x00){
+//         LOG_INFO("Sh version = 0x%X 0x%X 0x%X\r\n", sh_version[0], sh_version[1], sh_version[2]);
+//     }else{
+//         LOG_ERROR("Sh version read error = %d\r\n", (unsigned int) status);
+//     }
+//
+//     uint8_t register_attr[2];
+//     status = get_register_attributes(register_attr);
+//     if(status == 0x00){
+//         LOG_INFO("Register attributes = 0x%X 0x%X\r\n", register_attr[0], register_attr[1]);
+//     }else{
+//         LOG_ERROR("Register attributes read error = %d\r\n", (unsigned int) status);
+//     }
+//
+//     status = read_all_max_reg(all_max_registers);
+//     if(status == 0x00){
+//         LOG_INFO("All register read values = 0x%X 0x%X\r\n", all_max_registers[0], all_max_registers[254]);
+//     }else{
+//         LOG_ERROR("All register read read error = %d\r\n", (unsigned int) status);
+//     }
+//
+//     uint8_t single_reg;
+//     status = read_single_max_reg(0x07, &single_reg);
+//     if(status == 0x00){
+//         LOG_INFO("Single register value = 0x%X\r\n", single_reg);
+//     }else{
+//         LOG_ERROR("Single register read read error = %d\r\n", (unsigned int) status);
+//     }
 
      if(init_state){
        nextState = set_data_type;
@@ -421,15 +462,15 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
       }
 
       //6. Read the data stored in the FIFO.
-      status = sh_read_output_fifo();
-      if(status == 0x00){
-          LOG_INFO("Output FIFO Data read!\r\n");
-      }else{
-          LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
-      }
-
-      //4. Dump the read FIFO data to terminal.
-      dump_op_fifo_data();
+//      status = sh_read_output_fifo();
+//      if(status == 0x00){
+//          LOG_INFO("Output FIFO Data read!\r\n");
+//      }else{
+//          LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
+//      }
+//
+//      //4. Dump the read FIFO data to terminal.
+//      dump_op_fifo_data();
 
       nextState= stateIdle_max;
 
