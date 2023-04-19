@@ -35,7 +35,10 @@
   typedef enum {
     stateIdle_max,
     stateSensorCheck,
+    set_data_type,
+    set_thresh,
     enable_sh,
+    enable_algo,
     start_sh_read
   }State_max_t;
 
@@ -303,6 +306,7 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
   int status;
+  static uint8_t init_state = 1;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
       ext_sig =  evt->data.evt_system_external_signal.extsignals;
@@ -334,35 +338,89 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
          LOG_ERROR("Max Sensor Hub: Sensor 1 hub error = %d\r\n", (unsigned int) status);
      }
 
-     nextState = enable_sh;
+     if(init_state){
+       nextState = set_data_type;
+       init_state = 0;
+     }else{
+       nextState = start_sh_read;
+     }
 
      break;
+
+    /*1, 2, & 3 not working in a single state. Possibly because of less delay between commands.*/
+    case set_data_type:
+      nextState = set_data_type;
+
+      //1. Set data type to Sensor and algorithm data
+      status = sh_set_data_type(0x03);
+      if(status == 0x00){
+          LOG_INFO("Sensor data type set to sensor and algorithm data!\r\n");
+      }else{
+          LOG_ERROR("Max Sensor Hub: Sensor data type set error = 0x%X\r\n", (unsigned int) status);
+      }
+
+      nextState = set_thresh;
+      break;
+
+    case set_thresh:
+      nextState = set_thresh;
+
+      //2. Set max threshold of output FIFO to 15.
+      status = sh_set_fifo_thresh(0x05);
+      if(status == 0x00){
+          LOG_INFO("Sensor threshold set to 15!\r\n");
+      }else{
+          LOG_ERROR("Max Sensor Hub: Sensor threshold set error = 0x%X\r\n", (unsigned int) status);
+      }
+
+      nextState = enable_sh;
+
+      break;
+
 
     case enable_sh:
       nextState = enable_sh;
 
-      status = sh_enable(0);
-
+      //3. Enable MAX30101 sensor.
+      status = sh_enable(0x03);
       if(status == 0x00){
-          LOG_INFO("Sensor no. 0 enabled!\r\n");
+          LOG_INFO("Sensor no. 0x03 enabled!\r\n");
       }else{
-          LOG_ERROR("Max Sensor Hub: Sensor no. 0 enable error = %d\r\n", (unsigned int) status);
+          LOG_ERROR("Max Sensor Hub: Sensor no. 0x03 enable error = 0x%X\r\n", (unsigned int) status);
       }
 
-      nextState = start_sh_read;
+      nextState = enable_algo;
       break;
 
-    case start_sh_read:
-      nextState = start_sh_read;
+    case enable_algo:
+      nextState = enable_algo;
 
-      status = sh_enable_algo(0x02);//WHRM
+      //4. Enable the WHRM/MaximFast 10.x algorithm
+      status = sh_enable_algo(0x02);
       if(status == 0x00){
           LOG_INFO("Algo WHRM enabled!\r\n");
       }else{
           LOG_ERROR("Max Algo: Algo WHRM enable error = %d\r\n", (unsigned int) status);
       }
 
-      /*Not executing from this part.*/
+      nextState = start_sh_read;
+
+      break;
+
+    case start_sh_read:
+      nextState = start_sh_read;
+
+      //5. Get the number of sample in the FIFO
+      int no_samples = 0;
+
+      status = get_sh_no_samples(&no_samples);
+      if(status == 0x00){
+          LOG_INFO("No of samples in FIFO = %d\r\n",no_samples);
+      }else{
+          LOG_ERROR("Max Sensor Hub: No samples read error = %d\r\n", (unsigned int) status);
+      }
+
+      //6. Read the data stored in the FIFO.
       status = sh_read_output_fifo();
       if(status == 0x00){
           LOG_INFO("Output FIFO Data read!\r\n");
@@ -370,6 +428,7 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
           LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
       }
 
+      //4. Dump the read FIFO data to terminal.
       dump_op_fifo_data();
 
       nextState= stateIdle_max;

@@ -33,6 +33,7 @@
 
 #define MAX32664_DEVICE_ADDR    0xAA
 #define SENSOR_ENABLE_SLEEP_US  20000
+#define DEFAULT_CMD_SLEEP_US    2000
 
 // Function prototypes
 void I2C0_init();
@@ -46,7 +47,10 @@ uint32_t* get_temp_val();
 //Project Part
 int get_sensor_hub_status();
 int sh_enable(uint8_t index);
+int sh_set_fifo_thresh(uint8_t thresh_val);
+int sh_set_data_type(uint8_t val);
 int sh_enable_algo(uint8_t algo_idx);
+int get_sh_no_samples();
 int sh_read_output_fifo();
 void dump_op_fifo_data();
 
