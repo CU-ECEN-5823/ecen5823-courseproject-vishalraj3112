@@ -33,7 +33,7 @@
 
 #define MAX32664_DEVICE_ADDR    0xAA
 #define SENSOR_ENABLE_SLEEP_US  20000
-#define DEFAULT_CMD_SLEEP_US    2000
+#define DEFAULT_CMD_SLEEP_US    6000
 
 // Function prototypes
 void I2C0_init();
@@ -59,5 +59,6 @@ int sh_enable_algo(uint8_t algo_idx);
 int get_sh_no_samples();
 int sh_read_output_fifo();
 void dump_op_fifo_data();
+int sh_enable_maxim_fast(uint8_t mode);
 
 #endif /* SRC_I2C_H_ */

@@ -39,6 +39,7 @@
     set_thresh,
     enable_sh,
     enable_algo,
+    enable_maximFast,
     start_sh_read
   }State_max_t;
 
@@ -333,20 +334,20 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
     case stateSensorCheck:
      nextState = stateSensorCheck;
 
-     status = get_sensor_hub_status();
-     if(status == 0x00){
-         LOG_INFO("No comm error in reading Sensor 1 from Sensor hub\r\n");
-     }else{
-         LOG_ERROR("Max Sensor Hub: Sensor 1 hub error = %d\r\n", (unsigned int) status);
-     }
-
-//     uint8_t device_mode;
-//     status = get_device_mode(&device_mode);
+//     status = get_sensor_hub_status();
 //     if(status == 0x00){
-//         LOG_INFO("Device mode = 0x%X\r\n", device_mode);
+//         LOG_INFO("No comm error in reading Sensor 1 from Sensor hub\r\n");
 //     }else{
-//         LOG_ERROR("Device mode read error = %d\r\n", (unsigned int) status);
+//         LOG_ERROR("Max Sensor Hub: Sensor 1 hub error = %d\r\n", (unsigned int) status);
 //     }
+
+     uint8_t device_mode;
+     status = get_device_mode(&device_mode);
+     if(status == 0x00){
+         LOG_INFO("Device mode = 0x%X\r\n", device_mode);
+     }else{
+         LOG_ERROR("Device mode read error = %d\r\n", (unsigned int) status);
+     }
 //
 //     uint8_t sh_version[3];
 //     status = get_sh_version(sh_version);
@@ -392,10 +393,10 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
     case set_data_type:
       nextState = set_data_type;
 
-      //1. Set data type to Sensor and algorithm data
-      status = sh_set_data_type(0x03);
+      //1. Set data type to algorithm data
+      status = sh_set_data_type(0x02);
       if(status == 0x00){
-          LOG_INFO("Sensor data type set to sensor and algorithm data!\r\n");
+          LOG_INFO("Sensor data type set to algorithm data!\r\n");
       }else{
           LOG_ERROR("Max Sensor Hub: Sensor data type set error = 0x%X\r\n", (unsigned int) status);
       }
@@ -407,17 +408,31 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
       nextState = set_thresh;
 
       //2. Set max threshold of output FIFO to 15.
-      status = sh_set_fifo_thresh(0x05);
+      status = sh_set_fifo_thresh(0x01);
       if(status == 0x00){
-          LOG_INFO("Sensor threshold set to 15!\r\n");
+          LOG_INFO("Sensor threshold set to 1!\r\n");
       }else{
           LOG_ERROR("Max Sensor Hub: Sensor threshold set error = 0x%X\r\n", (unsigned int) status);
+      }
+
+      nextState = enable_algo;
+
+      break;
+
+    case enable_algo:
+      nextState = enable_algo;
+
+      //4. Enable the AGC algorithm
+      status = sh_enable_algo(0x00);
+      if(status == 0x00){
+          LOG_INFO("Algo AGC enabled!\r\n");
+      }else{
+          LOG_ERROR("Max Algo: Algo AGC enable error = %d\r\n", (unsigned int) status);
       }
 
       nextState = enable_sh;
 
       break;
-
 
     case enable_sh:
       nextState = enable_sh;
@@ -430,18 +445,18 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
           LOG_ERROR("Max Sensor Hub: Sensor no. 0x03 enable error = 0x%X\r\n", (unsigned int) status);
       }
 
-      nextState = enable_algo;
+      nextState = enable_maximFast;
       break;
 
-    case enable_algo:
-      nextState = enable_algo;
+    case enable_maximFast:
+      nextState = enable_maximFast;
 
-      //4. Enable the WHRM/MaximFast 10.x algorithm
-      status = sh_enable_algo(0x02);
+      //3. Enable Maxim fast algo.
+      status = sh_enable_maxim_fast(0x01);
       if(status == 0x00){
-          LOG_INFO("Algo WHRM enabled!\r\n");
+          LOG_INFO("Sensor Maxim algo enabled!\r\n");
       }else{
-          LOG_ERROR("Max Algo: Algo WHRM enable error = %d\r\n", (unsigned int) status);
+          LOG_ERROR("Maxim fast algo set error = 0x%X\r\n", (unsigned int) status);
       }
 
       nextState = start_sh_read;
@@ -460,6 +475,10 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
       }else{
           LOG_ERROR("Max Sensor Hub: No samples read error = %d\r\n", (unsigned int) status);
       }
+
+      timerWaitUs_polled(1000000);//Wait 1 sec
+
+      LOG_INFO("Sensor Configured!\r\n");
 
       //6. Read the data stored in the FIFO.
 //      status = sh_read_output_fifo();

@@ -339,7 +339,7 @@ int sh_enable(uint8_t index){
 
     uint8_t ByteSeq[] = {0x44, index, 0x01};
 
-    int status = max_sh_write_cmd(&ByteSeq[0], sizeof(ByteSeq), 5 * SENSOR_ENABLE_SLEEP_US);
+    int status = max_sh_write_cmd(&ByteSeq[0], sizeof(ByteSeq), 3 * SENSOR_ENABLE_SLEEP_US);
 
     return status;
 }
@@ -348,14 +348,24 @@ int sh_enable_algo(uint8_t algo_idx){
 
   uint8_t ByteSeq[] = {0x52, algo_idx, 0x01};
 
-  int status = max_sh_write_cmd(&ByteSeq[0], sizeof(ByteSeq), 25 * SENSOR_ENABLE_SLEEP_US);
+  int status = max_sh_write_cmd(&ByteSeq[0], sizeof(ByteSeq), 3 * SENSOR_ENABLE_SLEEP_US);
 
   return status;
 }
 
+int sh_enable_maxim_fast(uint8_t mode){
+
+  uint8_t ByteSeq[] = {0x52, 0x02, mode};
+
+  int status = max_sh_write_cmd(&ByteSeq[0], sizeof(ByteSeq), 3 * SENSOR_ENABLE_SLEEP_US);//60ms
+
+  return status;
+
+}
+
 int get_sh_no_samples(uint8_t * no_samples){
 
-  uint8_t ByteSeq[] = {0x12, 0x00}, rxbuf[2] = {0};
+  uint8_t ByteSeq[] = {0x51, 0x00, 0x03}, rxbuf[2] = {0};
 
   //makes no sense reading the status if its interrupt driven
   int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
