@@ -33,7 +33,7 @@
 
 #define MAX32664_DEVICE_ADDR    0xAA
 #define SENSOR_ENABLE_SLEEP_US  20000
-#define DEFAULT_CMD_SLEEP_US    6000
+#define DEFAULT_CMD_SLEEP_US    600//6000
 
 // Function prototypes
 void I2C0_init();

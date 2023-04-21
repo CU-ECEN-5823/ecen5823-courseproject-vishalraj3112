@@ -132,6 +132,8 @@ void I2C_Write_Max(uint8_t slave_addr, uint8_t* cmd_byte, uint16_t cmd_len){
 
   I2C_TransferReturn_TypeDef transferStatus;
 
+  //uint8_t ByteSeq[] = {0x02, 0x00};
+
   I2C0_init_max();
 
   //Set device address and unset read/write bit
@@ -139,7 +141,7 @@ void I2C_Write_Max(uint8_t slave_addr, uint8_t* cmd_byte, uint16_t cmd_len){
   //Set for write command
   transferSequence.flags = I2C_FLAG_WRITE;
   //Set the command to send and its size
-  transferSequence.buf[0].data = (uint8_t *) &cmd_byte;
+  transferSequence.buf[0].data = (uint8_t *) cmd_byte;//&cmd_byte;
   transferSequence.buf[0].len = cmd_len;
 
   //Enable NVIC for I2C0
@@ -198,7 +200,7 @@ void I2C_read_max(uint8_t slave_addr, uint8_t* rxbuf, uint16_t rxbuf_size){
   transferSequence.flags = I2C_FLAG_READ;
 
   //Write 2 Command bytes to buffer0
-  transferSequence.buf[0].data = (uint8_t *) &rxbuf;
+  transferSequence.buf[0].data = (uint8_t *) rxbuf;
   transferSequence.buf[0].len = rxbuf_size;
 
   //Enable NVIC for I2C0
@@ -253,7 +255,7 @@ int get_device_mode(uint8_t* device_mode){
   uint8_t ByteSeq[] = {0x02, 0x00}, rxbuf[2] = {0};
 
   //makes no sense reading the status if its interrupt driven
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+  int status = max_sh_read_cmd(ByteSeq, sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
 
   *device_mode = rxbuf[1];
 
