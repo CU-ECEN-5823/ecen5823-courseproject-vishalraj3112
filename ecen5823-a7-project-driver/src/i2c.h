@@ -60,5 +60,6 @@ int get_sh_no_samples();
 int sh_read_output_fifo();
 void dump_op_fifo_data();
 int sh_enable_maxim_fast(uint8_t mode);
+int get_fifo_no_samples(uint8_t* no_samples);
 
 #endif /* SRC_I2C_H_ */

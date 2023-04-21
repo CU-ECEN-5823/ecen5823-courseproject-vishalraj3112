@@ -30,7 +30,7 @@ I2C_TransferSeq_TypeDef transferSequence;
 uint8_t cmd_data;
 static uint16_t read_data;
 static uint32_t temp_degree_C;
-static uint8_t op_fifo_buf[20] = {0};
+static uint8_t op_fifo_buf[7] = {0};
 
 uint32_t* get_temp_val(){
 
@@ -310,9 +310,9 @@ int get_sensor_hub_status(){
   uint8_t ByteSeq[] = {0x00, 0x00}, rxbuf[2] = {0};
 
   //makes no sense reading the status if its interrupt driven
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+  max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
 
-  return status;
+  return (int) rxbuf[1];
 }
 
 int sh_set_data_type(uint8_t val){
@@ -375,11 +375,23 @@ int get_sh_no_samples(uint8_t * no_samples){
   return status;
 }
 
+int get_fifo_no_samples(uint8_t* no_samples){
+
+  uint8_t ByteSeq[] = {0x12, 0x00}, rxbuf[2] = {0};
+
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
+
+  *no_samples = rxbuf[1];
+
+  return status;
+
+}
+
 int sh_read_output_fifo(){
 
   uint8_t ByteSeq[] = {0x12, 0x01};
 
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &op_fifo_buf[0], sizeof(op_fifo_buf), 10000);
+  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &op_fifo_buf[0], (sizeof(op_fifo_buf)), DEFAULT_CMD_SLEEP_US);
 
   return status;
 

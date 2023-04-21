@@ -327,8 +327,16 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
 
     case stateIdle_max:
       nextState = stateIdle_max;
-      if(ext_sig == EVENT_LETIMER_UF)
-        nextState = stateSensorCheck;
+      if(ext_sig == EVENT_LETIMER_UF){
+
+        if(init_state){
+          nextState = stateSensorCheck;
+          init_state = 0;
+        }else{
+          nextState = start_sh_read;
+        }
+
+      }
       break;
 
     case stateSensorCheck:
@@ -340,6 +348,8 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
 //     }else{
 //         LOG_ERROR("Max Sensor Hub: Sensor 1 hub error = %d\r\n", (unsigned int) status);
 //     }
+
+     timerWaitUs_polled(1100000);//Wait for 1.1ms at the start
 
      uint8_t device_mode;
      status = get_device_mode(&device_mode);
@@ -379,13 +389,7 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
 //     }else{
 //         LOG_ERROR("Single register read read error = %d\r\n", (unsigned int) status);
 //     }
-
-     if(init_state){
-       nextState = set_data_type;
-       init_state = 0;
-     }else{
-       nextState = start_sh_read;
-     }
+     nextState = set_data_type;
 
      break;
 
@@ -459,15 +463,8 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
           LOG_ERROR("Maxim fast algo set error = 0x%X\r\n", (unsigned int) status);
       }
 
-      nextState = start_sh_read;
-
-      break;
-
-    case start_sh_read:
-      nextState = start_sh_read;
-
       //5. Get the number of sample in the FIFO
-      int no_samples = 0;
+      uint8_t no_samples = 0;
 
       status = get_sh_no_samples(&no_samples);
       if(status == 0x00){
@@ -480,16 +477,43 @@ void max_hub_read_polled(sl_bt_msg_t *evt){
 
       LOG_INFO("Sensor Configured!\r\n");
 
+      LOG_INFO("Loading sensor buffer data...\r\n");
+
+      timerWaitUs_polled(4000000);//Wait 4 secs
+
+      nextState = start_sh_read;
+
+      break;
+
+    case start_sh_read:
+      nextState = start_sh_read;
+
+      status = get_sensor_hub_status();
+      if(status == 0x00){
+         LOG_INFO("Sensor hub status ok!\r\n");
+      }else{
+         LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = %d\r\n", (unsigned int) status);
+      }
+
+      status = get_fifo_no_samples(&no_samples);
+      if(status == 0x00){
+         LOG_INFO("Sensor hub Fifo number samples: %d!\r\n", no_samples);
+      }else{
+         LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = %d\r\n", (unsigned int) status);
+      }
+
       //6. Read the data stored in the FIFO.
-//      status = sh_read_output_fifo();
-//      if(status == 0x00){
-//          LOG_INFO("Output FIFO Data read!\r\n");
-//      }else{
-//          LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
-//      }
-//
-//      //4. Dump the read FIFO data to terminal.
-//      dump_op_fifo_data();
+      status = sh_read_output_fifo();
+      if(status == 0x00){
+          LOG_INFO("Output FIFO Data read!\r\n");
+      }else{
+          LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
+      }
+
+      //4. Dump the read FIFO data to terminal.
+      dump_op_fifo_data();
+
+      timerWaitUs_polled(250000);//Wait 250ms before next cycle
 
       nextState= stateIdle_max;
 
