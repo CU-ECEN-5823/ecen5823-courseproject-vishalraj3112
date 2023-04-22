@@ -362,28 +362,26 @@ void dump_op_fifo_data(){
   uint16_t Spo2 = 0;
   uint8_t status = 0;
 
-//  for(int i=0; i<sizeof(op_fifo_buf); i++){
-//      LOG_INFO("%d: %d\r\n", i, op_fifo_buf[i]);
-//  }
-
   // Heart Rate formatting
-  heart_rate= (((uint16_t) op_fifo_buf[0]) << 8);
-  heart_rate |= (op_fifo_buf[1]);
+  heart_rate = (uint16_t) op_fifo_buf[1];
+  heart_rate= (heart_rate << 8);
+  heart_rate |= (op_fifo_buf[2]);
   heart_rate /= 10;
   LOG_INFO("Heart rate: %d\r\n", heart_rate);
 
   // Confidence formatting
-  confidence = op_fifo_buf[2];
+  confidence = op_fifo_buf[3];
   LOG_INFO("Confidence: %d\r\n", confidence);
 
   //Blood oxygen level formatting
-  Spo2 = ((uint16_t)(op_fifo_buf[3]) << 8);
-  Spo2 |= op_fifo_buf[4];
+  Spo2 = (uint16_t) op_fifo_buf[4];
+  Spo2 = (Spo2 << 8);
+  Spo2 |= op_fifo_buf[5];
   Spo2 /= 10;
   LOG_INFO("SpO2: %d\r\n", Spo2);
 
   //"Machine State" - has a finger been detected?
-  status = op_fifo_buf[5];
+  status = op_fifo_buf[6];
   LOG_INFO("Status: %d\r\n", status);
 
 }

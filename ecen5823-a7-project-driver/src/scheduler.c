@@ -322,9 +322,9 @@ void init_max_3266(){
       LOG_ERROR("Max Sensor Hub: Sensor data type set error = 0x%X\r\n", (unsigned int) status);
   }
 
-  status = sh_set_fifo_thresh(0x01);
+  status = sh_set_fifo_thresh(0x0F);
   if(status == 0x00){
-      LOG_INFO("Sensor threshold set to 1!\r\n");
+      LOG_INFO("Sensor threshold set to 15!\r\n");
   }else{
       LOG_ERROR("Max Sensor Hub: Sensor threshold set error = 0x%X\r\n", (unsigned int) status);
   }
