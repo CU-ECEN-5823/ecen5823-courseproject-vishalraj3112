@@ -74,7 +74,7 @@
 //           to call one of the LOG_***() functions from.
 
 // Include logging specifically for this .c file
-#define INCLUDE_LOG_DEBUG 0
+#define INCLUDE_LOG_DEBUG 1
 #include "src/log.h"
 
 
@@ -171,6 +171,7 @@ SL_WEAK void app_init(void)
   CMU_init();
   gpioInit();
   init_LETIMER0();
+  init_max_3266();
 
   //Clear and Enable LETIMER0 IRQ in NVIC
   NVIC_ClearPendingIRQ(LETIMER0_IRQn);
@@ -216,6 +217,7 @@ SL_WEAK void app_process_action(void)
   //         later assignments.
 
   //tempReadStateMachine();
+  read_max_32664();
 
   //timerWaitUs_test();
 
@@ -240,15 +242,17 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
   // Some events require responses from our application code,
   // and don’t necessarily advance our state machines.
   // For A5 uncomment the next 2 function calls
-   handle_ble_event(evt); // put this code in ble.c/.h
+
+  //handle_ble_event(evt); // put this code in ble.c/.h
 
 #if DEVICE_IS_BLE_SERVER
    // SERVER
    // sequence through states driven by events
 
 //   temperature_state_machine(evt);    // put this code in scheduler.c/.h
-//   max_hub_read(evt);
-   max_hub_read_polled(evt);
+
+  // max_hub_read_polled(evt);
+  //LOG_INFO("Just printing current time!\r\n");
 
 #else
    // CLIENT

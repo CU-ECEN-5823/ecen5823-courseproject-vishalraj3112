@@ -262,51 +262,6 @@ int get_device_mode(uint8_t* device_mode){
   return status;
 }
 
-int get_sh_version(uint8_t* sh_version){
-
-  uint8_t ByteSeq[] = {0xFF, 0x03}, rxbuf[4] = {0};
-
-  //makes no sense reading the status if its interrupt driven
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
-
-  sh_version[0] = rxbuf[1];
-  sh_version[1] = rxbuf[2];
-  sh_version[2] = rxbuf[3];
-
-  return status;
-}
-
-int get_register_attributes(uint8_t* register_attr){
-
-  uint8_t ByteSeq[] = {0x42, 0x03}, rxbuf[3] = {0};
-
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &rxbuf[0], sizeof(rxbuf), DEFAULT_CMD_SLEEP_US);
-
-  register_attr[0] = rxbuf[1];
-  register_attr[1] = rxbuf[2];
-
-  return status;
-}
-
-int read_all_max_reg(uint8_t* all_max_reg){
-
-  uint8_t ByteSeq[] = {0x43, 0x03};
-
-  //Might fault on this
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &all_max_reg[0], sizeof(all_max_reg), DEFAULT_CMD_SLEEP_US);
-
-  return status;
-}
-
-int read_single_max_reg(uint8_t reg_no, uint8_t* reg_val){
-
-  uint8_t ByteSeq[] = {0x41, 0x03, reg_no};
-
-  int status = max_sh_read_cmd(&ByteSeq[0], sizeof(ByteSeq), &reg_val[0], sizeof(reg_val), DEFAULT_CMD_SLEEP_US);
-
-  return status;
-}
-
 int get_sensor_hub_status(){
 
   uint8_t ByteSeq[] = {0x00, 0x00}, rxbuf[2] = {0};
@@ -402,9 +357,34 @@ int sh_read_output_fifo(){
 //Test
 void dump_op_fifo_data(){
 
-  for(int i=0; i<sizeof(op_fifo_buf); i++){
-      LOG_INFO("%d: %d\r\n", i, op_fifo_buf[i]);
-  }
+  uint16_t heart_rate = 0;
+  uint8_t confidence = 0;
+  uint16_t Spo2 = 0;
+  uint8_t status = 0;
+
+//  for(int i=0; i<sizeof(op_fifo_buf); i++){
+//      LOG_INFO("%d: %d\r\n", i, op_fifo_buf[i]);
+//  }
+
+  // Heart Rate formatting
+  heart_rate= (((uint16_t) op_fifo_buf[0]) << 8);
+  heart_rate |= (op_fifo_buf[1]);
+  heart_rate /= 10;
+  LOG_INFO("Heart rate: %d\r\n", heart_rate);
+
+  // Confidence formatting
+  confidence = op_fifo_buf[2];
+  LOG_INFO("Confidence: %d\r\n", confidence);
+
+  //Blood oxygen level formatting
+  Spo2 = ((uint16_t)(op_fifo_buf[3]) << 8);
+  Spo2 |= op_fifo_buf[4];
+  Spo2 /= 10;
+  LOG_INFO("SpO2: %d\r\n", Spo2);
+
+  //"Machine State" - has a finger been detected?
+  status = op_fifo_buf[5];
+  LOG_INFO("Status: %d\r\n", status);
 
 }
 

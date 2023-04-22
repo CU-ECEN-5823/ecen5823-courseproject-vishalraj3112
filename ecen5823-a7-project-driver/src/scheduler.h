@@ -25,7 +25,8 @@
 
 // Macros
 //#define IDLE_EVENT                 0
-//#define EVENT_LETIMER_UF           (1 << 0)
+#define EVENT_LETIMER_COMP1_CONF     (1 << 0)
+#define EVENT_LETIMER_UF_CONF        (1 << 1)
 //#define EVENT_LETIMER_COMP1        (1 << 1)
 //#define EVENT_I2C_TRANSFER_COMP    (1 << 2)
 
@@ -41,12 +42,18 @@ typedef enum {
 uint32_t getNextEvent();
 void tempReadStateMachine();
 void schedulerSetEventUF();
+void schedulerSetEventUFConf();
+void schedulerSetEventComp1Conf();
 void schedulerSetEventComp1();
 void schedulerSetI2CTransferComp();
 void schedulerSetTempMeasureEvent();
 void schedulerSetConnectionLostEvent();
 void temperature_state_machine(sl_bt_msg_t *evt);
 void discovery_state_machine(sl_bt_msg_t *evt);
+
+//Project related
+void init_max_3266();
+void read_max_32664();
 void max_hub_read(sl_bt_msg_t *evt);
 void max_hub_read_polled(sl_bt_msg_t *evt);
 

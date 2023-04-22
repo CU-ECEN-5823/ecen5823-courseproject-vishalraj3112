@@ -46,11 +46,6 @@ uint32_t* get_temp_val();
 
 //Project Part
 int get_device_mode(uint8_t* device_mode);
-int get_sh_version(uint8_t* sh_version);
-int get_register_attributes(uint8_t* register_attr);
-int read_all_max_reg(uint8_t* all_max_reg);
-int read_single_max_reg(uint8_t reg_no, uint8_t* reg_val);
-
 int get_sensor_hub_status();
 int sh_enable(uint8_t index);
 int sh_set_fifo_thresh(uint8_t thresh_val);
