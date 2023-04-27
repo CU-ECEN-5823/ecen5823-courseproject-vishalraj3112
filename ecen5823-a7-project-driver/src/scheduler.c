@@ -37,13 +37,13 @@ static uint32_t myEvents = 0;
   typedef enum {
     stateIdle_max,
     stateSensorCheck,
-    set_data_type,
-    set_thresh,
-    enable_sh,
-    enable_algo,
-    enable_maximFast,
+//    set_data_type,
+//    set_thresh,
+//    enable_sh,
+//    enable_algo,
+//    enable_maximFast,
     start_sh_read,
-    invalid_state
+//    invalid_state
   }State_max_t;
 
   typedef enum uint32_t {
@@ -54,6 +54,9 @@ static uint32_t myEvents = 0;
     stateI2CRead,
     stateGetResult,
   }State_t;
+
+static void read_max_3266_single(sl_bt_msg_t *evt);
+
 #else
   typedef enum uint32_t {
       discoverService,
@@ -437,269 +440,56 @@ void read_max_32664(){
 
 }
 
+void read_max_3266_single(sl_bt_msg_t *evt){
 
-void max_hub_read_polled(sl_bt_msg_t *evt){
-
-  uint32_t ext_sig = 0;
   int status;
-  static uint8_t init_state = 1;
+  uint32_t ext_sig = 0;
 
-//  if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
-//      ext_sig =  evt->data.evt_system_external_signal.extsignals;
-//  }else{
-//      return;
-//  }
-
-  uint32_t event;
-
-  event = getNextEvent();
-
-  State_max_t currentState;
-  static State_max_t nextState = stateIdle_max;
-
-  /*Switch States*/
-  currentState = nextState;
-
-  /*Test section
-  switch(currentState){
-
-    case stateIdle_max:
-      if(event == EVENT_LETIMER_UF_CONF){
-
-          LOG_INFO("UF event occured!\r\n");
-          timerWaitUs_irq(1000000);//1000ms
-          gpioLed1SetOn();
-          nextState = stateSensorCheck;
-
-      }
-      break;
-
-    case stateSensorCheck:
-      if(event == EVENT_LETIMER_COMP1_CONF){
-          LOG_INFO("COMP1 event occured!\r\n");
-          gpioLed1SetOff();
-          nextState = stateIdle_max;
-      }
-      break;
-
+  if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
+      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+  }else{
+      return;
   }
-  Test section*/
 
+  ble_data_struct_t* ble_params = get_ble_data_struct();
 
-  switch(currentState){
+  /*Stop taking temperature measurement if BLE connection is closed or
+   * HTM indications are disabled.*/
+  if(ble_params->connection_open == false || ble_params->ok_to_send_htm_connections == false){
+      // Clear max3266 print from LCD in this case
 
-    case stateIdle_max:
-      nextState = stateIdle_max;
-
-      //If coming for the first time, or in second cycle after COMP1 delay.
-
-        if(init_state){
-          nextState = stateSensorCheck;
-          init_state = 0;
-        }else{
-          nextState = start_sh_read;
-        }
-
-      break;
-
-    case stateSensorCheck:
-     nextState = stateSensorCheck;
-
-     timerWaitUs_polled(1100000);//Wait for 1.1s at the start
-
-     uint8_t device_mode;
-     status = get_device_mode(&device_mode);
-     if(status == 0x00){
-         LOG_INFO("Device mode = 0x%X\r\n", device_mode);
-     }else{
-         LOG_ERROR("Device mode read error = %d\r\n", (unsigned int) status);
-     }
-
-     status = sh_set_data_type(0x02);
-     if(status == 0x00){
-         LOG_INFO("Sensor data type set to algorithm data!\r\n");
-     }else{
-         LOG_ERROR("Max Sensor Hub: Sensor data type set error = 0x%X\r\n", (unsigned int) status);
-     }
-
-     status = sh_set_fifo_thresh(0x01);
-     if(status == 0x00){
-         LOG_INFO("Sensor threshold set to 1!\r\n");
-     }else{
-         LOG_ERROR("Max Sensor Hub: Sensor threshold set error = 0x%X\r\n", (unsigned int) status);
-     }
-
-     status = sh_enable_algo(0x00);
-     if(status == 0x00){
-         LOG_INFO("Algo AGC enabled!\r\n");
-     }else{
-         LOG_ERROR("Max Algo: Algo AGC enable error = %d\r\n", (unsigned int) status);
-     }
-
-     status = sh_enable(0x03);
-     if(status == 0x00){
-         LOG_INFO("Sensor no. 0x03 enabled!\r\n");
-     }else{
-         LOG_ERROR("Max Sensor Hub: Sensor no. 0x03 enable error = 0x%X\r\n", (unsigned int) status);
-     }
-
-     status = sh_enable_maxim_fast(0x01);
-     if(status == 0x00){
-         LOG_INFO("Sensor Maxim algo enabled!\r\n");
-     }else{
-         LOG_ERROR("Maxim fast algo set error = 0x%X\r\n", (unsigned int) status);
-     }
-
-     //5. Get the number of sample in the FIFO
-     uint8_t no_samples = 0;
-
-     status = get_sh_no_samples(&no_samples);
-     if(status == 0x00){
-         LOG_INFO("No of samples in FIFO = %d\r\n",no_samples);
-     }else{
-         LOG_ERROR("Max Sensor Hub: No samples read error = %d\r\n", (unsigned int) status);
-     }
-
-     timerWaitUs_polled(1000000);//Wait 1 sec
-
-     LOG_INFO("Sensor Configured!\r\n");
-
-     LOG_INFO("Loading sensor buffer data...\r\n");
-
-     nextState = set_data_type;
-
-     break;
-
-    case set_data_type:
-      nextState = set_data_type;
-
-      //1. Set data type to algorithm data
-//      status = sh_set_data_type(0x02);
-//      if(status == 0x00){
-//          LOG_INFO("Sensor data type set to algorithm data!\r\n");
-//      }else{
-//          LOG_ERROR("Max Sensor Hub: Sensor data type set error = 0x%X\r\n", (unsigned int) status);
-//      }
-
-      nextState = set_thresh;
-      break;
-
-    case set_thresh:
-      nextState = set_thresh;
-
-      //2. Set max threshold of output FIFO to 15.
-//      status = sh_set_fifo_thresh(0x01);
-//      if(status == 0x00){
-//          LOG_INFO("Sensor threshold set to 1!\r\n");
-//      }else{
-//          LOG_ERROR("Max Sensor Hub: Sensor threshold set error = 0x%X\r\n", (unsigned int) status);
-//      }
-
-      nextState = enable_algo;
-
-      break;
-
-    case enable_algo:
-      nextState = enable_algo;
-
-      //4. Enable the AGC algorithm
-//      status = sh_enable_algo(0x00);
-//      if(status == 0x00){
-//          LOG_INFO("Algo AGC enabled!\r\n");
-//      }else{
-//          LOG_ERROR("Max Algo: Algo AGC enable error = %d\r\n", (unsigned int) status);
-//      }
-
-      nextState = enable_sh;
-
-      break;
-
-    case enable_sh:
-      nextState = enable_sh;
-
-      //3. Enable MAX30101 sensor.
-//      status = sh_enable(0x03);
-//      if(status == 0x00){
-//          LOG_INFO("Sensor no. 0x03 enabled!\r\n");
-//      }else{
-//          LOG_ERROR("Max Sensor Hub: Sensor no. 0x03 enable error = 0x%X\r\n", (unsigned int) status);
-//      }
-
-      nextState = enable_maximFast;
-      break;
-
-    case enable_maximFast:
-      nextState = enable_maximFast;
-
-      //3. Enable Maxim fast algo.
-//      status = sh_enable_maxim_fast(0x01);
-//      if(status == 0x00){
-//          LOG_INFO("Sensor Maxim algo enabled!\r\n");
-//      }else{
-//          LOG_ERROR("Maxim fast algo set error = 0x%X\r\n", (unsigned int) status);
-//      }
-//
-//      //5. Get the number of sample in the FIFO
-//      uint8_t no_samples = 0;
-//
-//      status = get_sh_no_samples(&no_samples);
-//      if(status == 0x00){
-//          LOG_INFO("No of samples in FIFO = %d\r\n",no_samples);
-//      }else{
-//          LOG_ERROR("Max Sensor Hub: No samples read error = %d\r\n", (unsigned int) status);
-//      }
-//
-//      timerWaitUs_polled(1000000);//Wait 1 sec
-//
-//      LOG_INFO("Sensor Configured!\r\n");
-//
-//      LOG_INFO("Loading sensor buffer data...\r\n");
-
-      //timerWaitUs_polled(4000000);//Wait 4 secs
-
-      nextState = start_sh_read;
-
-      break;
-
-    case start_sh_read:
-
-      nextState = start_sh_read;
-
-      status = get_sensor_hub_status();
-      if(status == 0x00){
-         LOG_INFO("Sensor hub status ok!\r\n");
-      }else{
-         LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = 0x%X\r\n", (unsigned int) status);
-      }
-
-      status = get_fifo_no_samples(&no_samples);
-      if(status == 0x00){
-         LOG_INFO("Sensor hub Fifo number samples: %d!\r\n", no_samples);
-      }else{
-         LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = %d\r\n", (unsigned int) status);
-      }
-
-      //6. Read the data stored in the FIFO.
-      status = sh_read_output_fifo();
-      if(status == 0x00){
-          LOG_INFO("Output FIFO Data read!\r\n");
-      }else{
-          LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
-      }
-
-      //4. Dump the read FIFO data to terminal.
-      dump_op_fifo_data();
-
-      //timerWaitUs_polled(2500000);//Wait 2500ms before next cycle
-      timerWaitUs_irq(250000);
-
-      nextState = stateIdle_max;
-      break;
-
+      return;
   }
+
+  //1. Get sensor hub status
+  status = get_sensor_hub_status();
+  if(status == 0x00){
+     LOG_INFO("Sensor hub status ok!\r\n");
+  }else{
+     LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = 0x%X\r\n", (unsigned int) status);
+  }
+
+  //2. Get no of samples in the FIFO
+  uint8_t no_samples = 0;
+  status = get_fifo_no_samples(&no_samples);
+  if(status == 0x00){
+     LOG_INFO("Sensor hub Fifo number samples: %d!\r\n", no_samples);
+  }else{
+     LOG_ERROR("Max Sensor Hub: Sensor 1 hub  status error = %d\r\n", (unsigned int) status);
+  }
+
+  //3. Read the data stored in the FIFO.
+  status = sh_read_output_fifo();
+  if(status == 0x00){
+      LOG_INFO("Output FIFO Data read!\r\n");
+  }else{
+      LOG_ERROR("Output Fifo Data read error = %d\r\n", (unsigned int) status);
+  }
+
+  //4. Dump the read FIFO data to terminal.
+  dump_op_fifo_data();
 
 }
-
 // ---------------------------------------------------------------------
 // Public function
 // This function is used to run the temperature read & state machine
@@ -812,6 +602,7 @@ void temperature_state_machine(sl_bt_msg_t *evt){
          //Covert and print the result
          get_result();
          send_temp_ble();
+         read_max_3266_single(evt);
          nextState = stateIdle;
      }
      // Check for BLE connection lost

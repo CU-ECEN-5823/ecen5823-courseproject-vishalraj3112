@@ -217,7 +217,7 @@ SL_WEAK void app_process_action(void)
   //         later assignments.
 
   //tempReadStateMachine();
-  read_max_32664();
+  //read_max_32664();
 
   //timerWaitUs_test();
 
@@ -243,16 +243,13 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
   // and don’t necessarily advance our state machines.
   // For A5 uncomment the next 2 function calls
 
-  //handle_ble_event(evt); // put this code in ble.c/.h
+  handle_ble_event(evt); // put this code in ble.c/.h
 
 #if DEVICE_IS_BLE_SERVER
    // SERVER
    // sequence through states driven by events
 
-//   temperature_state_machine(evt);    // put this code in scheduler.c/.h
-
-  // max_hub_read_polled(evt);
-  //LOG_INFO("Just printing current time!\r\n");
+  temperature_state_machine(evt);    // put this code in scheduler.c/.h
 
 #else
    // CLIENT
