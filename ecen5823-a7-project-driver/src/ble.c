@@ -30,7 +30,7 @@
 #include <math.h>
 
 // Server relate
-#define ENABLE_BLE_LOGS                    0
+#define ENABLE_BLE_LOGS                    1
 #define MIN_ADVERTISE_INTERVAL             250
 #define MIN_ADVERTISE_INTERVAL_VAL         (MIN_ADVERTISE_INTERVAL)/0.625
 #define MAX_ADVERTISE_INTERVAL             250
@@ -434,6 +434,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
       ble_data.connection_open = false;
       ble_data.ok_to_send_htm_connections = false;
       ble_data.indication_in_flight = false;
+      ble_data.ok_to_send_hr_indications = false;
 
       /*3. Start advertising on the advertising set with the specified
              * discovery and connection modes.*/
@@ -505,11 +506,34 @@ void handle_ble_event(sl_bt_msg_t *evt){
 
        }
 
+       /*For heart rate measurement characteristic, see if client characteristic configuration changed*/
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_measurement)
+           && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x01)){
+
+           /*Check if indications were enabled from the client*/
+           if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x02){
+               ble_data.ok_to_send_hr_indications = true;
+           }
+
+           /*Check if indications were disabled from the client*/
+           if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x00){
+               ble_data.ok_to_send_hr_indications = false;
+           }
+
+       }
+
        /*A confirmation from the remote GATT Client was received upon a successful reception of the indication*/
        if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
                   && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02)){
            ble_data.indication_in_flight = false;
        }
+
+       /*A confirmation from the remote GATT Client was received upon a successful reception of the indication*/
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_measurement)
+                  && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02)){
+           ble_data.indication_in_flight = false;
+       }
+
 
        break;
 
@@ -604,6 +628,47 @@ void send_temp_ble(){
 
 }
 
+void send_heart_rate_ble(){
+
+  //1. Get the current heart rate value
+  uint16_t heart_rate = get_heart_rate_value();
+  sl_status_t rc;
+
+  //2.
+  // -------------------------------
+  // Write our local GATT DB
+  // -------------------------------
+  rc = sl_bt_gatt_server_write_attribute_value(
+         gattdb_heart_rate_measurement, // handle from gatt_db.h
+         0, // offset
+         2, // length
+         (uint8_t *)&heart_rate // pointer to value
+         );
+  if (rc != SL_STATUS_OK) {
+      LOG_ERROR("Error writing heart rate to GATT DB:%X\r\n", rc);
+  }
+
+  /*Send the data to client if the following conditions are met:
+   * 1. Indication for the given characteristic have been enabled by the client.
+   * 2. Connection for the current handle is open.
+   * 3. There is no connection, which is already in flight.*/
+  if(ble_data.ok_to_send_hr_indications == true && ble_data.connection_open == true && ble_data.indication_in_flight == false){
+
+    rc = sl_bt_gatt_server_send_indication(
+            ble_data.connectionHandle,
+            gattdb_heart_rate_measurement, // handle from gatt_db.h
+            2,
+            (uint8_t *)&heart_rate
+            );
+    if (rc != SL_STATUS_OK) {
+        LOG_ERROR("Error Sending heart rate to client:%X\r\n", rc);
+    } else {
+       //Set indication_in_flight flag
+        ble_data.indication_in_flight = true;
+    }
+  }
+
+}
 
 // -----------------------------------------------
 // Private function, original from Dan Walkes. I fixed a sign extension bug.

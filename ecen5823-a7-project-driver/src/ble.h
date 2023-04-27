@@ -18,6 +18,7 @@
 // Function prototypes
 void handle_ble_event(sl_bt_msg_t *evt);
 void send_temp_ble(void);
+void send_heart_rate_ble(void);
 
 // BLE Data Structure, save all of our private BT data in here.
 // Modern C (circa 2021 does it this way)
@@ -35,6 +36,7 @@ typedef struct {
  bool connection_open;               // true when connection is open
  bool ok_to_send_htm_connections;    // true when client enabled indications
  bool indication_in_flight;          // true when an indication is in flight
+ bool ok_to_send_hr_indications;
 
  // values unique for client
  uint8_t myAddressType;

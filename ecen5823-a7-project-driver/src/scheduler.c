@@ -455,7 +455,7 @@ void read_max_3266_single(sl_bt_msg_t *evt){
 
   /*Stop taking temperature measurement if BLE connection is closed or
    * HTM indications are disabled.*/
-  if(ble_params->connection_open == false || ble_params->ok_to_send_htm_connections == false){
+  if(ble_params->connection_open == false || ble_params->ok_to_send_hr_indications == false){
       // Clear max3266 print from LCD in this case
 
       return;
@@ -488,6 +488,9 @@ void read_max_3266_single(sl_bt_msg_t *evt){
 
   //4. Dump the read FIFO data to terminal.
   dump_op_fifo_data();
+
+  //5. Send only heart rate for now to client
+  send_heart_rate_ble();
 
 }
 // ---------------------------------------------------------------------
@@ -601,7 +604,7 @@ void temperature_state_machine(sl_bt_msg_t *evt){
          NVIC_DisableIRQ(I2C0_IRQn);
          //Covert and print the result
          get_result();
-         send_temp_ble();
+         //send_temp_ble();
          read_max_3266_single(evt);
          nextState = stateIdle;
      }

@@ -367,7 +367,7 @@ void dump_op_fifo_data(){
   heart_rate= (heart_rate << 8);
   heart_rate |= (op_fifo_buf[2]);
   heart_rate /= 10;
-  LOG_INFO("Heart rate: %d\r\n", heart_rate);
+  //LOG_INFO("Heart rate: %d\r\n", heart_rate);
 
   // Confidence formatting
   confidence = op_fifo_buf[3];
@@ -386,6 +386,20 @@ void dump_op_fifo_data(){
 
 }
 
+uint16_t get_heart_rate_value(){
+
+  uint16_t heart_rate = 0;
+
+  // Heart Rate formatting
+  heart_rate = (uint16_t) op_fifo_buf[1];
+  heart_rate= (heart_rate << 8);
+  heart_rate |= (op_fifo_buf[2]);
+  heart_rate /= 10;
+  LOG_INFO("Heart rate: %d\r\n", heart_rate);
+
+  return heart_rate;
+}
+
 // ---------------------------------------------------------------------
 // Public function
 // This function is used to convert the raw temperature from Si7021 to
@@ -398,7 +412,7 @@ void get_result(){
   read_data = ((read_data >> 8) & 0xFF) | ((read_data << 8) & 0xFF00); //Swap bytes
   temp_degree_C = ((175.72 * (read_data) / 65536) - 46.85);
 
-  LOG_INFO("Temp in C:%d\r\n", temp_degree_C);
+  //LOG_INFO("Temp in C:%d\r\n", temp_degree_C);
 
   // Print temp on the LCD
   displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temperature=%d", temp_degree_C);

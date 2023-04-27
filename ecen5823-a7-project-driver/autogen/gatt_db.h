@@ -20,7 +20,10 @@ extern const sli_bt_gattdb_t gattdb;
 #define gattdb_intermediate_temperature       27
 #define gattdb_measurement_interval           30
 #define gattdb_valid_range                    31
-#define gattdb_ota_control                    35
+#define gattdb_heart_rate_measurement         35
+#define gattdb_body_sensor_location           38
+#define gattdb_heart_rate_control_point       40
+#define gattdb_ota_control                    43
 
 
 #endif // __GATT_DB_H

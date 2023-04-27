@@ -195,4 +195,34 @@ Summary:
       </descriptor>
     </characteristic>
   </service>
+
+  <!--Heart Rate-->
+  <service advertise="true" id="heart_rate_0" name="Heart Rate" requirement="mandatory" sourceId="org.bluetooth.service.heart_rate" type="primary" uuid="180D">
+    <informativeText>Abstract: This service exposes heart rate and other data from a Heart Rate Sensor intended for fitness applications.
+Summary: The HEART RATE Service exposes heart rate and other data related to a heart rate sensor intended for fitness applications.</informativeText>
+
+    <!--Heart Rate Measurement-->
+    <characteristic const="false" id="heart_rate_measurement" name="Heart Rate Measurement" sourceId="org.bluetooth.characteristic.heart_rate_measurement" uuid="2A37">
+      <value length="8" type="hex" variable_length="false"/>
+      <properties>
+        <indicate authenticated="false" bonded="false" encrypted="false"/>
+      </properties>
+    </characteristic>
+
+    <!--Body Sensor Location-->
+    <characteristic const="false" id="body_sensor_location" name="Body Sensor Location" sourceId="org.bluetooth.characteristic.body_sensor_location" uuid="2A38">
+      <value length="1" type="hex" variable_length="false"/>
+      <properties>
+        <read authenticated="false" bonded="false" encrypted="false"/>
+      </properties>
+    </characteristic>
+
+    <!--Heart Rate Control Point-->
+    <characteristic const="false" id="heart_rate_control_point" name="Heart Rate Control Point" sourceId="org.bluetooth.characteristic.heart_rate_control_point" uuid="2A39">
+      <value length="1" type="hex" variable_length="false"/>
+      <properties>
+        <write authenticated="false" bonded="false" encrypted="false"/>
+      </properties>
+    </characteristic>
+  </service>
 </gatt>
