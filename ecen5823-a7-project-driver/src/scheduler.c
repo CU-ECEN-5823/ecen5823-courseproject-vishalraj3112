@@ -493,6 +493,7 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   send_heart_rate_ble();
 
 }
+
 // ---------------------------------------------------------------------
 // Public function
 // This function is used to run the temperature read & state machine

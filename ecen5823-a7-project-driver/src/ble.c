@@ -30,7 +30,7 @@
 #include <math.h>
 
 // Server relate
-#define ENABLE_BLE_LOGS                    1
+#define ENABLE_BLE_LOGS                    0
 #define MIN_ADVERTISE_INTERVAL             250
 #define MIN_ADVERTISE_INTERVAL_VAL         (MIN_ADVERTISE_INTERVAL)/0.625
 #define MAX_ADVERTISE_INTERVAL             250
@@ -507,7 +507,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
        }
 
        /*For heart rate measurement characteristic, see if client characteristic configuration changed*/
-       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_measurement)
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_state)
            && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x01)){
 
            /*Check if indications were enabled from the client*/
@@ -529,7 +529,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
        }
 
        /*A confirmation from the remote GATT Client was received upon a successful reception of the indication*/
-       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_measurement)
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_heart_rate_state)
                   && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02)){
            ble_data.indication_in_flight = false;
        }
@@ -639,7 +639,7 @@ void send_heart_rate_ble(){
   // Write our local GATT DB
   // -------------------------------
   rc = sl_bt_gatt_server_write_attribute_value(
-         gattdb_heart_rate_measurement, // handle from gatt_db.h
+         gattdb_heart_rate_state, // handle from gatt_db.h
          0, // offset
          2, // length
          (uint8_t *)&heart_rate // pointer to value
@@ -656,7 +656,7 @@ void send_heart_rate_ble(){
 
     rc = sl_bt_gatt_server_send_indication(
             ble_data.connectionHandle,
-            gattdb_heart_rate_measurement, // handle from gatt_db.h
+            gattdb_heart_rate_state, // handle from gatt_db.h
             2,
             (uint8_t *)&heart_rate
             );
