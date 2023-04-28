@@ -48,4 +48,38 @@ typedef struct {
 
 ble_data_struct_t*  get_ble_data_struct(void);
 
+// ----CBFIFO related declarations----
+
+// This is the number of entries in the queue. Please leave
+// this value set to 16.
+#define QUEUE_DEPTH      (16)
+// Student edit:
+//   define this to 1 if your design uses all array entries
+//   define this to 0 if your design leaves 1 array entry empty
+#define USE_ALL_ENTRIES  (1)
+
+// Modern C (circa 2021 does it this way)
+// This is referred to as an anonymous struct definition.
+// This is the structure of 1 queue/buffer/FIFO entry.
+// Please do not change this definition.
+//typedef struct {
+//  uint8_t       a;
+//  uint16_t      b;
+//} queue_struct_t;
+
+typedef struct{
+
+  uint8_t buffer[5];
+  uint8_t bufferLength;
+  uint16_t charType;
+
+} queue_struct_t;
+
+// Function prototypes. The autograder (i.e. the testbench) only uses these
+// functions to test your design. Please do not change these definitions.
+bool     write_queue (queue_struct_t q);
+bool     read_queue (queue_struct_t *q);
+uint32_t get_queue_depth (void);
+void  display(void);
+
 #endif /* SRC_BLE_H_ */

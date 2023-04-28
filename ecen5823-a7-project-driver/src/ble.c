@@ -63,6 +63,14 @@ int32_t FLOAT_TO_INT32(const uint8_t *value_start_little_endian);
 static uint8_t advertising_set_handle = 0xff;
 #endif
 
+// Global variable for cbfifo
+// Declare memory for the queue/buffer/fifo, and the write and read pointers
+queue_struct_t   my_queue[QUEUE_DEPTH]; // the queue - an array of structs
+uint32_t         wptr = -1;//rear              // write pointer
+uint32_t         rptr = -1;//front              // read pointer
+
+static bool is_empty(void);
+
 // ---------------------------------------------------------------------
 // Public function
 // This function is used to return the ble private data structure
@@ -555,8 +563,40 @@ void handle_ble_event(sl_bt_msg_t *evt){
     /*Indicates that a soft timer has lapsed.*/
     case sl_bt_evt_system_soft_timer_id:
 
-      /*Update the display @ 1Hz*/
+      /*1. Update the display @ 1Hz*/
       displayUpdate();
+
+      /* 2. If no indication is in flight, then send the remaining commands
+       * in the queue to client*/
+      if(ble_data.connection_open == true &&
+          ble_data.indication_in_flight == false &&
+          is_empty() == false){
+
+          queue_struct_t entry;
+
+          if(read_queue(&entry) == false){//read success
+
+            /*Send the indication since there is no pending GATT command.*/
+            rc = sl_bt_gatt_server_send_indication(
+                    ble_data.connectionHandle,
+                    entry.charType, // handle from gatt_db.h
+                    entry.bufferLength,
+                    entry.buffer // pointer to where data is
+                    );
+            if (rc != SL_STATUS_OK) {
+                LOG_ERROR("Error Sending client data from queue:%X\r\n", rc);
+            } else {
+               //Set indication_in_flight flag
+                ble_data.indication_in_flight = true;
+            }
+
+          }else{
+              LOG_ERROR("Error: Queue dequeue failed!\r\n");
+          }
+
+          //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth());
+
+      }
 
       break;
 #endif
@@ -610,20 +650,42 @@ void send_temp_ble(){
    * 1. Indication for the given characteristic have been enabled by the client.
    * 2. Connection for the current handle is open.
    * 3. There is no connection, which is already in flight.*/
-  if(ble_data.ok_to_send_htm_connections == true && ble_data.connection_open == true && ble_data.indication_in_flight == false){
+  if(ble_data.ok_to_send_htm_connections == true
+      && ble_data.connection_open == true
+      ){
 
-    rc = sl_bt_gatt_server_send_indication(
-            ble_data.connectionHandle,
-            gattdb_temperature_measurement, // handle from gatt_db.h
-            5,
-            &htm_temperature_buffer[0] // in IEEE-11073 format
-            );
-    if (rc != SL_STATUS_OK) {
-        LOG_ERROR("Error Sending client data:%X\r\n", rc);
-    } else {
-       //Set indication_in_flight flag
-        ble_data.indication_in_flight = true;
-    }
+    if(ble_data.indication_in_flight == false){
+
+      /*Send the indication since there is no pending GATT command.*/
+      rc = sl_bt_gatt_server_send_indication(
+              ble_data.connectionHandle,
+              gattdb_temperature_measurement, // handle from gatt_db.h
+              5,
+              &htm_temperature_buffer[0] // in IEEE-11073 format
+              );
+      if (rc != SL_STATUS_OK) {
+          LOG_ERROR("Error Sending client data:%X\r\n", rc);
+      } else {
+         //Set indication_in_flight flag
+          ble_data.indication_in_flight = true;
+      }
+
+   }else{/*enqueue the current contents in queue*/
+
+     queue_struct_t entry = {0};
+     memcpy(entry.buffer, htm_temperature_buffer, sizeof(htm_temperature_buffer));
+     entry.bufferLength = sizeof(htm_temperature_buffer);
+     entry.charType = gattdb_temperature_measurement;
+
+     if(write_queue(entry) == false){
+         LOG_INFO("Event enqueued in queue, current Qdepth:%d\r\n", get_queue_depth());
+         //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth()); // Remove this
+     }else{
+         LOG_ERROR("Error: Queue push failed, queue full!\r\n");
+     }
+
+   }
+
   }
 
 }
@@ -652,19 +714,39 @@ void send_heart_rate_ble(){
    * 1. Indication for the given characteristic have been enabled by the client.
    * 2. Connection for the current handle is open.
    * 3. There is no connection, which is already in flight.*/
-  if(ble_data.ok_to_send_hr_indications == true && ble_data.connection_open == true && ble_data.indication_in_flight == false){
+  if(ble_data.ok_to_send_hr_indications == true &&
+      ble_data.connection_open == true
+      ){
 
-    rc = sl_bt_gatt_server_send_indication(
-            ble_data.connectionHandle,
-            gattdb_heart_rate_state, // handle from gatt_db.h
-            2,
-            (uint8_t *)&heart_rate
-            );
-    if (rc != SL_STATUS_OK) {
-        LOG_ERROR("Error Sending heart rate to client:%X\r\n", rc);
-    } else {
-       //Set indication_in_flight flag
-        ble_data.indication_in_flight = true;
+      /*If no indication is in flight send immediately*/
+      if(ble_data.indication_in_flight == false){
+
+      rc = sl_bt_gatt_server_send_indication(
+              ble_data.connectionHandle,
+              gattdb_heart_rate_state, // handle from gatt_db.h
+              2,
+              (uint8_t *)&heart_rate
+              );
+      if (rc != SL_STATUS_OK) {
+          LOG_ERROR("Error Sending heart rate to client:%X\r\n", rc);
+      } else {
+         //Set indication_in_flight flag
+          ble_data.indication_in_flight = true;
+      }
+    }else{ /*enqueue the current contents in queue*/
+
+      queue_struct_t entry = {0};
+      memcpy(entry.buffer, &heart_rate, sizeof(heart_rate));
+      entry.bufferLength = sizeof(heart_rate);
+      entry.charType = gattdb_heart_rate_state;
+
+      if(write_queue(entry) == false){
+          LOG_INFO("Event enqueued in queue, current Qdepth:%d\r\n", get_queue_depth());
+          //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth()); // Remove this
+      }else{
+          LOG_ERROR("Error: Queue push failed, queue full!\r\n");
+      }
+
     }
   }
 
@@ -702,4 +784,162 @@ int32_t FLOAT_TO_INT32(const uint8_t *value_start_little_endian)
    return (int32_t) (pow(10, exponent) * mantissa);
 
 }
+
+// ---------------------------------------------------------------------
+// Private function used only by this .c file.
+// Checks if the queue is currently empty
+// Returns true if the queue is full, otherwise false
+// ---------------------------------------------------------------------
+bool is_empty(void){
+
+  if(rptr == (uint32_t) -1)
+    return true;
+
+  return false;
+}
+
+// ---------------------------------------------------------------------
+// Private function used only by this .c file.
+// Checks if the queue is currently full for rptr > wptr & wptr > rptr.
+// Returns true if the queue is full, false otherwise
+// ---------------------------------------------------------------------
+bool is_full(void){
+
+  if(((rptr == 0) && (wptr == QUEUE_DEPTH - 1)) || (wptr == rptr - 1))
+    return true;
+
+  return false;
+}
+
+// ---------------------------------------------------------------------
+// Public function used only by this .c file.
+// Used to display the current contents of the queue.
+// Returns nothing.
+// ---------------------------------------------------------------------
+void display(void){
+
+  printf("Queue:\n");
+    for(int i = 0; i < QUEUE_DEPTH; i++){
+        //printf("%d %d\n",my_queue[i].a, my_queue[i].b);
+    }
+    printf("\n");
+}
+
+// ---------------------------------------------------------------------
+// Private function used only by this .c file.
+// Compute the next ptr value. Given a valid ptr value, compute the next valid
+// value of the ptr and return it.
+// Isolation of functionality: This defines "how" a pointer advances.
+// ---------------------------------------------------------------------
+uint32_t nextPtr(uint32_t ptr) {
+
+  uint32_t ret_val = (ptr + 1) % QUEUE_DEPTH; //circularly increase index by one
+
+  return ret_val;
+
+} // nextPtr()
+
+// ---------------------------------------------------------------------
+// Public function
+// This function writes an entry to the queue if the the queue is not full.
+// Input parameter "a" should be written to queue_struct_t element "a"
+// Input parameter "b" should be written to queue_struct_t element "b"
+// Returns bool false if successful or true if writing to a full fifo.
+// i.e. false means no error, true means an error occurred.
+// ---------------------------------------------------------------------
+bool write_queue (queue_struct_t q) {
+
+  if(is_full()){
+    LOG_INFO("Queue full!\n\r");
+    return true;
+  }else{
+
+    //for first entry
+    if(rptr == (uint32_t) -1)
+      rptr = 0;
+
+    //nextPtr logic
+    wptr = nextPtr(wptr);
+
+    //fill the entries
+    my_queue[wptr] = q;
+
+  }
+
+  return false;//ok case
+
+} // write_queue()
+
+// ---------------------------------------------------------------------
+// Public function
+// This function reads an entry from the queue.
+// Write the values of a and b from my_queue[rptr] to the memory addresses
+// pointed at by *a and *b. In this implementation, we do it this way because
+// standard C does not provide a mechanism for a C function to return multiple
+// values, as is common in perl or python.
+// Returns bool false if successful or true if reading from an empty fifo.
+// i.e. false means no error, true means an error occurred.
+// ---------------------------------------------------------------------
+bool read_queue (queue_struct_t *q) {
+
+  if(is_empty()){
+
+    printf("Queue empty!\n");
+    return true;
+
+  }else{
+
+    *q = my_queue[rptr];
+
+    //for last element, reset read and write pointer
+    if(rptr == wptr){
+      wptr = -1;
+      rptr = -1;
+    }else{
+      //nextPtr logic
+      rptr = nextPtr(rptr);
+    }
+  }
+
+  return false;
+
+} // read_queue()
+
+// ---------------------------------------------------------------------
+// Public function
+// This function returns the wptr, rptr, full and empty values, writing
+// to memory using the pointer values passed in, same rationale as read_queue()
+// ---------------------------------------------------------------------
+void get_queue_status (uint32_t *_wptr, uint32_t *_rptr, bool *_full, bool *_empty) {
+
+  *_wptr = wptr;
+  *_rptr = rptr;
+
+  *_full = is_full();
+  *_empty = is_empty();
+
+} // get_queue_status()
+
+// ---------------------------------------------------------------------
+// Public function
+// Function that computes the number of written entries currently in the queue. If there
+// are 3 entries in the queue, it should return 3. If the queue is empty it should
+// return 0. If the queue is full it should return either QUEUE_DEPTH if
+// USE_ALL_ENTRIES==1 otherwise returns QUEUE_DEPTH-1.
+// ---------------------------------------------------------------------
+uint32_t get_queue_depth() {
+
+  //3 cases:
+  //1. When wptr == -1, empty queue
+  if(wptr == (uint32_t) -1){
+    return 0;
+  }else if(wptr >= rptr){//2. When wptr > rptr
+    return(wptr - rptr + 1);
+  }else if(rptr > wptr){//2. When rptr > wptr
+    return (QUEUE_DEPTH - (rptr - wptr) + 1);
+  }
+
+  //Added to prevent warnings
+  return 0;
+} // get_queue_depth()
 

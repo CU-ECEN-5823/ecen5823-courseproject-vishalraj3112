@@ -605,7 +605,7 @@ void temperature_state_machine(sl_bt_msg_t *evt){
          NVIC_DisableIRQ(I2C0_IRQn);
          //Covert and print the result
          get_result();
-         //send_temp_ble();
+         send_temp_ble();
          read_max_3266_single(evt);
          nextState = stateIdle;
      }
