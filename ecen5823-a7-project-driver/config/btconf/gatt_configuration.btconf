@@ -264,4 +264,25 @@ Summary:
       </descriptor>
     </characteristic>
   </service>
+
+  <!--Spo2 custom-->
+  <service advertise="true" name="Spo2 custom" requirement="mandatory" sourceId="" type="primary" uuid="00000003-38c8-433e-87ec-652a2d136289">
+
+    <!--Spo2 custom state-->
+    <characteristic const="false" id="spo2_state" name="Spo2 custom state" sourceId="" uuid="00000004-38c8-433e-87ec-652a2d136289">
+      <value length="2" type="hex" variable_length="false">FFFF</value>
+      <properties>
+        <indicate authenticated="false" bonded="false" encrypted="false"/>
+      </properties>
+
+      <!--Client Characteristic Configuration 6-->
+      <descriptor const="false" discoverable="true" id="client_characteristic_configuration_6" name="Client Characteristic Configuration 6" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
+        <properties>
+          <read authenticated="false" bonded="false" encrypted="false"/>
+          <write authenticated="false" bonded="false" encrypted="false"/>
+        </properties>
+        <value length="2" type="hex" variable_length="false">00</value>
+      </descriptor>
+    </characteristic>
+  </service>
 </gatt>

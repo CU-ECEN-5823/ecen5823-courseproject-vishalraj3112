@@ -443,6 +443,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
       ble_data.ok_to_send_htm_connections = false;
       ble_data.indication_in_flight = false;
       ble_data.ok_to_send_hr_indications = false;
+      ble_data.ok_to_send_o2_indications = false;
 
       /*3. Start advertising on the advertising set with the specified
              * discovery and connection modes.*/
@@ -530,6 +531,23 @@ void handle_ble_event(sl_bt_msg_t *evt){
 
        }
 
+       /*For Sp02 measurement characteristic, see if client characteristic configuration changed*/
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_spo2_state)
+           && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x01)){
+
+           /*Check if indications were enabled from the client*/
+           if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x02){
+               ble_data.ok_to_send_o2_indications = true;
+           }
+
+           /*Check if indications were disabled from the client*/
+           if(evt->data.evt_gatt_server_characteristic_status.client_config_flags == 0x00){
+               ble_data.ok_to_send_o2_indications = false;
+           }
+
+       }
+
+
        /*A confirmation from the remote GATT Client was received upon a successful reception of the indication*/
        if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_temperature_measurement)
                   && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02)){
@@ -542,6 +560,11 @@ void handle_ble_event(sl_bt_msg_t *evt){
            ble_data.indication_in_flight = false;
        }
 
+       /*A confirmation from the remote GATT Client was received upon a successful reception of the indication*/
+       if((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_spo2_state)
+                  && (evt->data.evt_gatt_server_characteristic_status.status_flags == 0x02)){
+           ble_data.indication_in_flight = false;
+       }
 
        break;
 
@@ -594,7 +617,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
               LOG_ERROR("Error: Queue dequeue failed!\r\n");
           }
 
-          //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth());
+          displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth());
 
       }
 
@@ -739,6 +762,68 @@ void send_heart_rate_ble(){
       memcpy(entry.buffer, &heart_rate, sizeof(heart_rate));
       entry.bufferLength = sizeof(heart_rate);
       entry.charType = gattdb_heart_rate_state;
+
+      if(write_queue(entry) == false){
+          LOG_INFO("Event enqueued in queue, current Qdepth:%d\r\n", get_queue_depth());
+          //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth()); // Remove this
+      }else{
+          LOG_ERROR("Error: Queue push failed, queue full!\r\n");
+      }
+
+    }
+  }
+
+}
+
+void send_spo2_ble(){
+
+  //1. Get the current heart rate value
+  uint16_t spo2 = get_spo2_value();
+  sl_status_t rc;
+
+  //2.
+  // -------------------------------
+  // Write our local GATT DB
+  // -------------------------------
+  rc = sl_bt_gatt_server_write_attribute_value(
+         gattdb_spo2_state, // handle from gatt_db.h
+         0, // offset
+         2, // length
+         (uint8_t *)&spo2 // pointer to value
+         );
+  if (rc != SL_STATUS_OK) {
+      LOG_ERROR("Error writing Spo2 to GATT DB:%X\r\n", rc);
+  }
+
+  /*Send the data to client if the following conditions are met:
+   * 1. Indication for the given characteristic have been enabled by the client.
+   * 2. Connection for the current handle is open.
+   * 3. There is no connection, which is already in flight.*/
+  if(ble_data.ok_to_send_o2_indications == true &&
+      ble_data.connection_open == true
+      ){
+
+      /*If no indication is in flight send immediately*/
+      if(ble_data.indication_in_flight == false){
+
+      rc = sl_bt_gatt_server_send_indication(
+              ble_data.connectionHandle,
+              gattdb_spo2_state, // handle from gatt_db.h
+              2,
+              (uint8_t *)&spo2
+              );
+      if (rc != SL_STATUS_OK) {
+          LOG_ERROR("Error Sending heart rate to client:%X\r\n", rc);
+      } else {
+         //Set indication_in_flight flag
+          ble_data.indication_in_flight = true;
+      }
+    }else{ /*enqueue the current contents in queue*/
+
+      queue_struct_t entry = {0};
+      memcpy(entry.buffer, &spo2, sizeof(spo2));
+      entry.bufferLength = sizeof(spo2);
+      entry.charType = gattdb_spo2_state;
 
       if(write_queue(entry) == false){
           LOG_INFO("Event enqueued in queue, current Qdepth:%d\r\n", get_queue_depth());

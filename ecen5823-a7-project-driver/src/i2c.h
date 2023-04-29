@@ -57,5 +57,6 @@ void dump_op_fifo_data();
 int sh_enable_maxim_fast(uint8_t mode);
 int get_fifo_no_samples(uint8_t* no_samples);
 uint16_t get_heart_rate_value();
+uint16_t get_spo2_value();
 
 #endif /* SRC_I2C_H_ */

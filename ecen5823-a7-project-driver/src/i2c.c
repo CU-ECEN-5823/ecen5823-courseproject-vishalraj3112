@@ -378,7 +378,7 @@ void dump_op_fifo_data(){
   Spo2 = (Spo2 << 8);
   Spo2 |= op_fifo_buf[5];
   Spo2 /= 10;
-  LOG_INFO("SpO2: %d\r\n", Spo2);
+  //LOG_INFO("SpO2: %d\r\n", Spo2);
 
   //"Machine State" - has a finger been detected?
   status = op_fifo_buf[6];
@@ -398,6 +398,21 @@ uint16_t get_heart_rate_value(){
   LOG_INFO("Heart rate: %d\r\n", heart_rate);
 
   return heart_rate;
+}
+
+uint16_t get_spo2_value(){
+
+  uint16_t Spo2 = 0;
+
+  //Blood oxygen level formatting
+  Spo2 = (uint16_t) op_fifo_buf[4];
+  Spo2 = (Spo2 << 8);
+  Spo2 |= op_fifo_buf[5];
+  Spo2 /= 10;
+
+  LOG_INFO("SpO2: %d\r\n", Spo2);
+
+  return Spo2;
 }
 
 // ---------------------------------------------------------------------

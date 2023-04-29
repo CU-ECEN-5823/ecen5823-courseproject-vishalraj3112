@@ -489,8 +489,11 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   //4. Dump the read FIFO data to terminal.
   dump_op_fifo_data();
 
-  //5. Send only heart rate for now to client
+  //5. Send only heart rate to client
   send_heart_rate_ble();
+
+  //6. Send SpO2 value to client
+  send_spo2_ble();
 
 }
 
