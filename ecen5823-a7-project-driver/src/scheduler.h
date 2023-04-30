@@ -54,8 +54,6 @@ bool temperature_state_machine(sl_bt_msg_t *evt);
 void discovery_state_machine(sl_bt_msg_t *evt);
 
 //Project related
-void init_max_3266();
-void read_max_32664();
 void max_hub_read(sl_bt_msg_t *evt);
 void max_hub_read_polled(sl_bt_msg_t *evt);
 //void read_max_3266_single(sl_bt_msg_t *evt);
