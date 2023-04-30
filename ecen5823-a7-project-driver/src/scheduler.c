@@ -69,6 +69,12 @@ static uint32_t myEvents = 0;
     stateTrigRestart
   }State_TrigMode_t;
 
+  typedef enum{
+    stateContInit,
+    stateContReadTemp,
+    stateContReadMax
+  }State_ContMode_t;
+
 static DeviceMode_t dev_mode = NO_MODE;
 
 static void read_max_3266_single(sl_bt_msg_t *evt);
@@ -543,7 +549,7 @@ void read_max_3266_single(sl_bt_msg_t *evt){
 
   /*Stop sending Spo2 if BLE connection is closed or
    * Spo2 indications are disabled.*/
-  if(ble_params->connection_open == true && ble_params->ok_to_send_hr_indications == true){
+  if(ble_params->connection_open == true && ble_params->ok_to_send_o2_indications == true){
     //6. Send SpO2 value to client
     send_spo2_ble();
   }
@@ -567,7 +573,7 @@ void set_device_mode(sl_bt_msg_t *evt){
   if(pb0_val == true && init_mode == true){
       dev_mode = TRIGGER_MODE;
       init_mode = false;
-  }else if(pb0_val == true && init_mode == true){
+  }else if(pb1_val == true && init_mode == true){
       dev_mode = CONTINUOUS_MODE;
       init_mode = false;
   }
@@ -661,6 +667,56 @@ void trig_mode_state_machine(sl_bt_msg_t *evt){
 
 void cont_mode_state_machine(sl_bt_msg_t *evt){
 
+  uint32_t ext_sig = 0;
+
+  if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
+      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+  }else{
+      return;
+  }
+
+  State_ContMode_t currentState;
+  static State_ContMode_t nextState = stateContInit;
+
+  /*Switch States*/
+  currentState = nextState;
+
+  switch(currentState){
+
+    case stateContInit:
+      //1. Clear old prints
+      displayPrintf(DISPLAY_ROW_ACTION, "");
+      displayPrintf(DISPLAY_ROW_8, "");
+      displayPrintf(DISPLAY_ROW_11, "Current mode:Conti");
+
+      //2. Print Vital Params
+      displayPrintf(DISPLAY_ROW_ACTION, "Body temp: --");
+      displayPrintf(DISPLAY_ROW_TEMPVALUE, "Pulse rate: --");
+      displayPrintf(DISPLAY_ROW_8, "SpO2: --");
+
+      nextState = stateContReadTemp;
+
+      break;
+
+    case stateContReadTemp:
+      nextState = stateContReadTemp;
+
+      bool done = temperature_state_machine(evt);
+
+      if(done == true){
+          nextState = stateContReadMax;
+      }
+      break;
+
+    case stateContReadMax:
+      nextState = stateContReadMax;
+
+      read_max_3266_single(evt);
+
+      nextState = stateContReadTemp;
+
+      break;
+  }
 
 }
 
@@ -693,8 +749,8 @@ bool temperature_state_machine(sl_bt_msg_t *evt){
   if(ble_params->connection_open == false || ble_params->ok_to_send_htm_connections == false){
       nextState = stateIdle;
       // Clear Temperature print from LCD in this case
-      displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
-      return false;//change this to true
+      displayPrintf(DISPLAY_ROW_ACTION, " ");
+      return true;//change this to true
   }
 
   /*Switch States*/
