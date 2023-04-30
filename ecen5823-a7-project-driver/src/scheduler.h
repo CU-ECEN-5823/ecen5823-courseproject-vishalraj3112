@@ -50,7 +50,7 @@ void schedulerSetEventComp1();
 void schedulerSetI2CTransferComp();
 void schedulerSetTempMeasureEvent();
 void schedulerSetConnectionLostEvent();
-void temperature_state_machine(sl_bt_msg_t *evt);
+bool temperature_state_machine(sl_bt_msg_t *evt);
 void discovery_state_machine(sl_bt_msg_t *evt);
 
 //Project related

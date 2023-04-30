@@ -64,7 +64,8 @@ static uint32_t myEvents = 0;
 
   typedef enum{
     stateTrigInit,
-    stateTrigRead,
+    stateTrigReadTemp,
+    stateTrigReadMax,
     stateTrigRestart
   }State_TrigMode_t;
 
@@ -505,14 +506,6 @@ void read_max_3266_single(sl_bt_msg_t *evt){
 
   ble_data_struct_t* ble_params = get_ble_data_struct();
 
-  /*Stop taking temperature measurement if BLE connection is closed or
-   * HTM indications are disabled.*/
-  if(ble_params->connection_open == false || ble_params->ok_to_send_hr_indications == false){
-      // Clear max3266 print from LCD in this case
-
-      return;
-  }
-
   //1. Get sensor hub status
   status = get_sensor_hub_status();
   if(status == 0x00){
@@ -541,11 +534,19 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   //4. Dump the read FIFO data to terminal.
   dump_op_fifo_data();
 
-  //5. Send only heart rate to client
-  send_heart_rate_ble();
+  /*Stop sending heart rate if BLE connection is closed or
+   * HR indications are disabled.*/
+  if(ble_params->connection_open == true && ble_params->ok_to_send_hr_indications == true){
+      //5. Send only heart rate to client
+      send_heart_rate_ble();
+  }
 
-  //6. Send SpO2 value to client
-  send_spo2_ble();
+  /*Stop sending Spo2 if BLE connection is closed or
+   * Spo2 indications are disabled.*/
+  if(ble_params->connection_open == true && ble_params->ok_to_send_hr_indications == true){
+    //6. Send SpO2 value to client
+    send_spo2_ble();
+  }
 
 }
 
@@ -586,6 +587,7 @@ void mode_state_machine(sl_bt_msg_t *evt){
 void trig_mode_state_machine(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
+  static cycle_count = 0;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
       ext_sig =  evt->data.evt_system_external_signal.extsignals;
@@ -612,14 +614,47 @@ void trig_mode_state_machine(sl_bt_msg_t *evt){
       displayPrintf(DISPLAY_ROW_TEMPVALUE, "Pulse rate: --");
       displayPrintf(DISPLAY_ROW_8, "SpO2: --");
 
-      nextState = stateTrigRead;
+      nextState = stateTrigReadTemp;
 
       break;
 
-    case stateTrigRead:
-      temperature_state_machine(evt);
+    case stateTrigReadTemp:
+      nextState = stateTrigReadTemp;
+
+      bool done = temperature_state_machine(evt);
+
+      if(done == true){
+          nextState = stateTrigReadMax;
+          cycle_count++;
+      }
       break;
 
+    case stateTrigReadMax:
+      nextState = stateTrigReadMax;
+
+      read_max_3266_single(evt);
+
+      if(cycle_count == 5){
+          nextState = stateTrigRestart;
+          cycle_count = 0;
+      }else{
+          nextState = stateTrigReadTemp;
+      }
+
+      break;
+
+    case stateTrigRestart:
+      nextState = stateTrigRestart;
+
+      displayPrintf(DISPLAY_ROW_10, "Press PB0 to restart");
+
+      bool pb0_val = get_pbo_val();
+
+      if(pb0_val == true){
+          displayPrintf(DISPLAY_ROW_10, "");
+          nextState = stateTrigInit;
+      }
+      break;
   }
 
 }
@@ -637,14 +672,15 @@ void cont_mode_state_machine(sl_bt_msg_t *evt){
 // @param None
 // Returns None
 // ---------------------------------------------------------------------
-void temperature_state_machine(sl_bt_msg_t *evt){
+bool temperature_state_machine(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
+  bool temp_process_done = false;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
       ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
-      return;
+      return false;
   }
 
   ble_data_struct_t* ble_params = get_ble_data_struct();
@@ -658,7 +694,7 @@ void temperature_state_machine(sl_bt_msg_t *evt){
       nextState = stateIdle;
       // Clear Temperature print from LCD in this case
       displayPrintf(DISPLAY_ROW_TEMPVALUE, " ");
-      return;
+      return false;//change this to true
   }
 
   /*Switch States*/
@@ -743,7 +779,7 @@ void temperature_state_machine(sl_bt_msg_t *evt){
          //Covert and print the result
          get_result();
          send_temp_ble();
-         read_max_3266_single(evt);
+         //read_max_3266_single(evt);
          nextState = stateIdle;
      }
      // Check for BLE connection lost
@@ -754,6 +790,14 @@ void temperature_state_machine(sl_bt_msg_t *evt){
      break;
 
   }// switch
+
+  if(currentState == stateGetResult){
+      temp_process_done = true;
+  }else{
+      temp_process_done = false;
+  }
+
+  return temp_process_done;
 
 }
 #endif
