@@ -396,6 +396,7 @@ uint16_t get_heart_rate_value(){
   heart_rate |= (op_fifo_buf[2]);
   heart_rate /= 10;
   LOG_INFO("Heart rate: %d\r\n", heart_rate);
+  displayPrintf(DISPLAY_ROW_TEMPVALUE, "Pulse rate:%dbpm", heart_rate);
 
   return heart_rate;
 }
@@ -411,6 +412,7 @@ uint16_t get_spo2_value(){
   Spo2 /= 10;
 
   LOG_INFO("SpO2: %d\r\n", Spo2);
+  displayPrintf(DISPLAY_ROW_8, "SpO2:%d\%",Spo2);
 
   return Spo2;
 }
@@ -430,7 +432,8 @@ void get_result(){
   //LOG_INFO("Temp in C:%d\r\n", temp_degree_C);
 
   // Print temp on the LCD
-  displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temperature=%d", temp_degree_C);
+  //displayPrintf(DISPLAY_ROW_TEMPVALUE, "Temperature=%d", temp_degree_C);
+  displayPrintf(DISPLAY_ROW_ACTION, "Body temp:%d", temp_degree_C);
 
 } //get_result()
 

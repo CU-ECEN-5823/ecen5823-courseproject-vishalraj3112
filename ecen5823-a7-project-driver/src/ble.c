@@ -381,8 +381,9 @@ void handle_ble_event(sl_bt_msg_t *evt){
       displayPrintf(DISPLAY_ROW_NAME, BLE_DEVICE_TYPE_STRING);
       displayPrintf(DISPLAY_ROW_BTADDR, "%X:%X:%X:%X:%X:%X",address.addr[0], address.addr[1],
                     address.addr[2], address.addr[3], address.addr[4], address.addr[5]);
-      displayPrintf(DISPLAY_ROW_ASSIGNMENT, ASSIGNMENT_NUMBER);
       displayPrintf(DISPLAY_ROW_CONNECTION, ADVERTISING_STRING);
+      displayPrintf(DISPLAY_ROW_CLIENTADDR, "IoT Project: Vitals Checker");
+      displayPrintf(DISPLAY_ROW_ACTION, "Connect with device to start measurement");
 
       #if ENABLE_BLE_LOGS
       LOG_INFO("Advertising started...\r\n");
@@ -426,6 +427,8 @@ void handle_ble_event(sl_bt_msg_t *evt){
 
       /*3. Add LCD prints*/
       displayPrintf(DISPLAY_ROW_CONNECTION, CONNECTED_STRING);
+      displayPrintf(DISPLAY_ROW_ACTION, "PB0 for Trig Md");
+      displayPrintf(DISPLAY_ROW_8, "PB1 for Cont md");
 
       break;
 
@@ -617,7 +620,7 @@ void handle_ble_event(sl_bt_msg_t *evt){
               LOG_ERROR("Error: Queue dequeue failed!\r\n");
           }
 
-          displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth());
+          //displayPrintf(DISPLAY_ROW_10, "QD = %d", get_queue_depth());
 
       }
 

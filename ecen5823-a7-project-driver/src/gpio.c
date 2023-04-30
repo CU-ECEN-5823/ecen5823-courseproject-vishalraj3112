@@ -66,6 +66,18 @@ void gpioInit()
 	//Init LCD ExtComin Pin
 	GPIO_PinModeSet(LCD_port, LCD_EXTCOMIN_pin, gpioModePushPull, false);
 
+  //Set PB0 as input - Input enabled. Filter if DOUT is set
+  GPIO_PinModeSet(PB0_port, PB0_pin, gpioModeInput, true);
+
+  //Enable GPIO interrupt for PB0
+  GPIO_ExtIntConfig(PB0_port, PB0_pin, PB0_pin, true, true, true);
+
+  //Set PB1 as input - Input enabled. Filter if DOUT is set
+  GPIO_PinModeSet(PB1_port, PB1_pin, gpioModeInput, true);
+
+  //Enable GPIO interrupt for PB1
+  GPIO_ExtIntConfig(PB1_port, PB1_pin, PB1_pin, true, true, true);
+
 } // gpioInit()
 
 

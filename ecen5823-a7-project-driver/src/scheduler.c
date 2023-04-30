@@ -29,6 +29,7 @@
 #include "ble.h"
 #include "lcd.h"
 #include "ble_device_type.h"
+#include "irq.h"
 
 #if DEVICE_IS_BLE_SERVER
 
@@ -55,7 +56,23 @@ static uint32_t myEvents = 0;
     stateGetResult,
   }State_t;
 
+  typedef enum{
+    TRIGGER_MODE,
+    CONTINUOUS_MODE,
+    NO_MODE
+  }DeviceMode_t;
+
+  typedef enum{
+    stateTrigInit,
+    stateTrigRead,
+    stateTrigRestart
+  }State_TrigMode_t;
+
+static DeviceMode_t dev_mode = NO_MODE;
+
 static void read_max_3266_single(sl_bt_msg_t *evt);
+static void trig_mode_state_machine(sl_bt_msg_t *evt);
+static void cont_mode_state_machine(sl_bt_msg_t *evt);
 
 #else
   typedef enum uint32_t {
@@ -174,6 +191,41 @@ void schedulerSetI2CTransferComp(){
   sl_bt_external_signal(EVENT_I2C_TRANSFER_COMP);
 
   CORE_EXIT_CRITICAL();
+}
+
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to set the PB0 button pressed/released event.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
+void  schedulerSetEventPB0(){
+
+  CORE_DECLARE_IRQ_STATE;
+
+  CORE_ENTER_CRITICAL();
+
+  sl_bt_external_signal(EVENT_PB0);
+
+  CORE_EXIT_CRITICAL();
+
+}
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to set the PB1 button pressed/released event.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
+void  schedulerSetEventPB1(){
+
+  CORE_DECLARE_IRQ_STATE;
+
+  CORE_ENTER_CRITICAL();
+
+  sl_bt_external_signal(EVENT_PB1);
+
+  CORE_EXIT_CRITICAL();
+
 }
 
 // ---------------------------------------------------------------------
@@ -496,6 +548,88 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   send_spo2_ble();
 
 }
+
+void set_device_mode(sl_bt_msg_t *evt){
+
+  uint32_t ext_sig = 0;
+  static bool init_mode = true;
+
+  if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
+      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+  }else{
+      return;
+  }
+
+  bool pb0_val = get_pbo_val();
+  bool pb1_val = get_pb1_val();
+
+  if(pb0_val == true && init_mode == true){
+      dev_mode = TRIGGER_MODE;
+      init_mode = false;
+  }else if(pb0_val == true && init_mode == true){
+      dev_mode = CONTINUOUS_MODE;
+      init_mode = false;
+  }
+
+}
+
+void mode_state_machine(sl_bt_msg_t *evt){
+
+  if(dev_mode == TRIGGER_MODE){
+      trig_mode_state_machine(evt);
+  }else if(dev_mode == CONTINUOUS_MODE){
+      cont_mode_state_machine(evt);
+  }
+
+}
+
+void trig_mode_state_machine(sl_bt_msg_t *evt){
+
+  uint32_t ext_sig = 0;
+
+  if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
+      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+  }else{
+      return;
+  }
+
+  State_TrigMode_t currentState;
+  static State_TrigMode_t nextState = stateTrigInit;
+
+  /*Switch States*/
+  currentState = nextState;
+
+  switch(currentState){
+
+    case stateTrigInit:
+      //1. Clear old prints
+      displayPrintf(DISPLAY_ROW_ACTION, "");
+      displayPrintf(DISPLAY_ROW_8, "");
+      displayPrintf(DISPLAY_ROW_11, "Current mode:Trigger");
+
+      //2. Print Vital Params
+      displayPrintf(DISPLAY_ROW_ACTION, "Body temp: --");
+      displayPrintf(DISPLAY_ROW_TEMPVALUE, "Pulse rate: --");
+      displayPrintf(DISPLAY_ROW_8, "SpO2: --");
+
+      nextState = stateTrigRead;
+
+      break;
+
+    case stateTrigRead:
+      temperature_state_machine(evt);
+      break;
+
+  }
+
+}
+
+void cont_mode_state_machine(sl_bt_msg_t *evt){
+
+
+}
+
+
 
 // ---------------------------------------------------------------------
 // Public function

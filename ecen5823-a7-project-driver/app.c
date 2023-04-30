@@ -177,6 +177,12 @@ SL_WEAK void app_init(void)
   NVIC_ClearPendingIRQ(LETIMER0_IRQn);
   NVIC_EnableIRQ(LETIMER0_IRQn);
 
+  //Clear and Enable GPIO_EVEN GPIO_ODD IRQ in NVIC
+  NVIC_ClearPendingIRQ(GPIO_EVEN_IRQn);
+  NVIC_EnableIRQ(GPIO_EVEN_IRQn);
+  NVIC_ClearPendingIRQ(GPIO_ODD_IRQn);
+  NVIC_EnableIRQ(GPIO_ODD_IRQn);
+
 #if   LOWEST_ENERGY_MODE == 1
   sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 #elif LOWEST_ENERGY_MODE == 2
@@ -249,7 +255,9 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
    // SERVER
    // sequence through states driven by events
 
-  temperature_state_machine(evt);    // put this code in scheduler.c/.h
+  set_device_mode(evt);
+  mode_state_machine(evt);
+  //temperature_state_machine(evt);    // put this code in scheduler.c/.h
 
 #else
    // CLIENT

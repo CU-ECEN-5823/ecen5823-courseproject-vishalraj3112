@@ -27,6 +27,8 @@
 #include "i2c.h"
 
 #define PERIOD_3_SEC      3000
+#define GPIO_INT_PB0      (1 << PB0_pin)
+#define GPIO_INT_PB1      (1 << PB1_pin)
 
 #if LOWEST_ENERGY_MODE == 3
     #define CNT_PER_MS    1
@@ -35,6 +37,8 @@
 #endif
 
 static uint32_t counter_ms = 0;
+static uint32_t pb0_val = 1; //Pulled-up
+static uint32_t pb1_val = 1; //Pulled-up
 
 // ---------------------------------------------------------------------
 // Private ISR function
@@ -105,4 +109,88 @@ uint32_t letimerMilliseconds(void){
 
   return ret_val;
 }// letimerMilliseconds()
+
+// ---------------------------------------------------------------------
+// Private ISR function
+// This function is the GPIO PB0 ISR, triggered when PB0 is pressed.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
+void GPIO_EVEN_IRQHandler(){
+
+  //Determine IRQ source
+  uint32_t flags = GPIO_IntGetEnabled();
+
+  pb0_val = GPIO_PinInGet(PB0_port, PB0_pin);
+
+  //Clear the interrupt flag
+  GPIO_IntClear(flags);
+
+  if(flags & GPIO_INT_PB0) {
+
+      schedulerSetEventPB0();
+
+  }
+
+}
+
+// ---------------------------------------------------------------------
+// Private ISR function
+// This function is the GPIO PB1 ISR, triggered when PB1 is pressed.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
+void GPIO_ODD_IRQHandler(){
+
+  //Determine IRQ source
+  uint32_t flags = GPIO_IntGetEnabled();
+
+  pb1_val = GPIO_PinInGet(PB1_port, PB1_pin);
+
+  //Clear the interrupt flag
+  GPIO_IntClear(flags);
+
+  if(flags & GPIO_INT_PB1) {
+
+      schedulerSetEventPB1();
+
+  }
+
+}
+
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to get the PB0 button current status
+// @param None
+// Returns true - button pressed, false - button released
+// ---------------------------------------------------------------------
+bool get_pbo_val(){
+
+  if(pb0_val == 0){
+      return true;
+  }else if(pb0_val == 1){
+      return false;
+  }
+
+  //to avoid warnings
+  return false;
+}
+
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to get the PB1 button current status
+// @param None
+// Returns true - button pressed, false - button released
+// ---------------------------------------------------------------------
+bool get_pb1_val(){
+
+  if(pb1_val == 0){
+      return true;
+  }else if(pb1_val == 1){
+      return false;
+  }
+
+  //to avoid warnings
+  return false;
+}
 

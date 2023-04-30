@@ -32,6 +32,11 @@
 #include "em_gpio.h"
 #include <stdbool.h>
 
+#define PB0_port          gpioPortF
+#define PB0_pin           6
+#define PB1_port          gpioPortF
+#define PB1_pin           7
+
 
 // Function prototypes
 void gpioInit();

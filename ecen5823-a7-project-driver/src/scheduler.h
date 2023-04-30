@@ -35,7 +35,9 @@ typedef enum {
   EVENT_LETIMER_UF,
   EVENT_LETIMER_COMP1,
   EVENT_I2C_TRANSFER_COMP,
-  EVENT_CONNECTION_LOST
+  EVENT_CONNECTION_LOST,
+  EVENT_PB0,
+  EVENT_PB1
 }events_t;
 
 // Function prototypes
@@ -57,5 +59,9 @@ void read_max_32664();
 void max_hub_read(sl_bt_msg_t *evt);
 void max_hub_read_polled(sl_bt_msg_t *evt);
 //void read_max_3266_single(sl_bt_msg_t *evt);
+void schedulerSetEventPB0();
+void schedulerSetEventPB1();
+void set_device_mode(sl_bt_msg_t *evt);
+void mode_state_machine(sl_bt_msg_t *evt);
 
 #endif /* SRC_SCHEDULER_H_ */

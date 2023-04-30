@@ -21,6 +21,7 @@
 #ifndef SRC_IRQ_H_
 #define SRC_IRQ_H_
 
-
+bool get_pbo_val();
+bool get_pb1_val();
 
 #endif /* SRC_IRQ_H_ */
