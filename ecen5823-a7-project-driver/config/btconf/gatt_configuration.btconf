@@ -196,54 +196,6 @@ Summary:
     </characteristic>
   </service>
 
-  <!--Heart Rate-->
-  <service advertise="true" id="heart_rate_0" name="Heart Rate" requirement="mandatory" sourceId="org.bluetooth.service.heart_rate" type="primary" uuid="180D">
-    <informativeText>Abstract: This service exposes heart rate and other data from a Heart Rate Sensor intended for fitness applications.
-Summary: The HEART RATE Service exposes heart rate and other data related to a heart rate sensor intended for fitness applications.</informativeText>
-
-    <!--Heart Rate Measurement-->
-    <characteristic const="false" id="heart_rate_measurement" name="Heart Rate Measurement" sourceId="org.bluetooth.characteristic.heart_rate_measurement" uuid="2A37">
-      <value length="2" type="hex" variable_length="false">ffff</value>
-      <properties>
-        <indicate authenticated="false" bonded="false" encrypted="false"/>
-      </properties>
-
-      <!--Client Characteristic Configuration-->
-      <descriptor const="false" discoverable="true" id="heart_rate_measurement_client_characteristic_configuration_0" name="Client Characteristic Configuration" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
-        <informativeText>Abstract: 
-        The Client Characteristic Configuration descriptor defines how the characteristic may be configured by a specific client.            
-		
-Summary: 
-        This descriptor shall be persistent across connections for bonded devices.
-        The Client Characteristic Configuration descriptor is unique for each client. A client may read and write this descriptor to determine and set the configuration for that client.
-        Authentication and authorization may be required by the server to write this descriptor.
-        The default value for the Client Characteristic Configuration descriptor is 0x00. Upon connection of non-binded clients, this descriptor is set to the default value.
-		</informativeText>
-        <properties>
-          <read authenticated="false" bonded="false" encrypted="false"/>
-          <write authenticated="false" bonded="false" encrypted="false"/>
-        </properties>
-        <value length="2" type="hex" variable_length="false">0000</value>
-      </descriptor>
-    </characteristic>
-
-    <!--Body Sensor Location-->
-    <characteristic const="false" id="body_sensor_location" name="Body Sensor Location" sourceId="org.bluetooth.characteristic.body_sensor_location" uuid="2A38">
-      <value length="1" type="hex" variable_length="false"/>
-      <properties>
-        <read authenticated="false" bonded="false" encrypted="false"/>
-      </properties>
-    </characteristic>
-
-    <!--Heart Rate Control Point-->
-    <characteristic const="false" id="heart_rate_control_point" name="Heart Rate Control Point" sourceId="org.bluetooth.characteristic.heart_rate_control_point" uuid="2A39">
-      <value length="1" type="hex" variable_length="false"/>
-      <properties>
-        <write authenticated="false" bonded="false" encrypted="false"/>
-      </properties>
-    </characteristic>
-  </service>
-
   <!--Heart rate custom-->
   <service advertise="true" name="Heart rate custom" requirement="mandatory" sourceId="" type="primary" uuid="00000001-38c8-433e-87ec-652a2d136289">
 
@@ -277,6 +229,28 @@ Summary:
 
       <!--Client Characteristic Configuration 6-->
       <descriptor const="false" discoverable="true" id="client_characteristic_configuration_6" name="Client Characteristic Configuration 6" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
+        <properties>
+          <read authenticated="false" bonded="false" encrypted="false"/>
+          <write authenticated="false" bonded="false" encrypted="false"/>
+        </properties>
+        <value length="2" type="hex" variable_length="false">00</value>
+      </descriptor>
+    </characteristic>
+  </service>
+
+  <!--Iot Project Encryption Test-->
+  <service advertise="true" name="Iot Project Encryption Test" requirement="mandatory" sourceId="" type="primary" uuid="00000005-38c8-433e-87ec-652a2d136289">
+
+    <!--ECEN5823 Encrypted Button State-->
+    <characteristic const="false" id="button_state" name="ECEN5823 Encrypted Button State" sourceId="" uuid="00000005-38c8-433e-87ec-652a2d136289">
+      <value length="1" type="hex" variable_length="false">00</value>
+      <properties>
+        <read authenticated="false" bonded="true" encrypted="false"/>
+        <indicate authenticated="false" bonded="true" encrypted="false"/>
+      </properties>
+
+      <!--Client Characteristic Configuration 7-->
+      <descriptor const="false" discoverable="true" id="client_characteristic_configuration_7" name="Client Characteristic Configuration 7" sourceId="org.bluetooth.descriptor.gatt.client_characteristic_configuration" uuid="2902">
         <properties>
           <read authenticated="false" bonded="false" encrypted="false"/>
           <write authenticated="false" bonded="false" encrypted="false"/>

@@ -57,10 +57,12 @@
 // BLE private data
 static ble_data_struct_t ble_data;
 int32_t FLOAT_TO_INT32(const uint8_t *value_start_little_endian);
+static void handle_pb0_pressed(void);
 
 // The advertising set handle allocated from Bluetooth stack.
 #if (DEVICE_IS_BLE_SERVER == 1)
 static uint8_t advertising_set_handle = 0xff;
+static volatile uint32_t passkey = 0;
 #endif
 
 // Global variable for cbfifo
@@ -340,6 +342,8 @@ void handle_ble_event(sl_bt_msg_t *evt){
 
       /* Update the connection state*/
       ble_data.connection_open = false;
+      ble_data.bonded = false;
+      ble_data.bonding_started = false;
 
       /* 1. Read the bluetooth identity address used by the device */
       rc = sl_bt_system_get_identity_address(&address, &address_type);
@@ -382,12 +386,24 @@ void handle_ble_event(sl_bt_msg_t *evt){
       displayPrintf(DISPLAY_ROW_BTADDR, "%X:%X:%X:%X:%X:%X",address.addr[0], address.addr[1],
                     address.addr[2], address.addr[3], address.addr[4], address.addr[5]);
       displayPrintf(DISPLAY_ROW_CONNECTION, ADVERTISING_STRING);
-      displayPrintf(DISPLAY_ROW_CLIENTADDR, "IoT Project: Vitals Checker");
-      displayPrintf(DISPLAY_ROW_ACTION, "Connect with device to start measurement");
+      displayPrintf(DISPLAY_ROW_CLIENTADDR, "IoT Project");
+      displayPrintf(DISPLAY_ROW_ACTION, "Connect with device");
 
       #if ENABLE_BLE_LOGS
       LOG_INFO("Advertising started...\r\n");
       #endif
+
+      /* 7. Confirm security requirements of the system */
+      rc = sl_bt_sm_configure(0x0F, sl_bt_sm_io_capability_displayyesno);
+      if(rc != SL_STATUS_OK){
+          LOG_ERROR("Bluetooth: Security configuration error = %d\r\n", (unsigned int) rc);
+      }
+
+      /* 8. Delete bonding info*/
+      rc = sl_bt_sm_delete_bondings();
+      if(rc != SL_STATUS_OK){
+          LOG_ERROR("Bluetooth: Bonding info deletion error = %d\r\n", (unsigned int) rc);
+      }
 
       break;
 
@@ -427,8 +443,6 @@ void handle_ble_event(sl_bt_msg_t *evt){
 
       /*3. Add LCD prints*/
       displayPrintf(DISPLAY_ROW_CONNECTION, CONNECTED_STRING);
-      displayPrintf(DISPLAY_ROW_ACTION, "PB0 for Trig Md");
-      displayPrintf(DISPLAY_ROW_8, "PB1 for Cont md");
 
       break;
 
@@ -447,6 +461,8 @@ void handle_ble_event(sl_bt_msg_t *evt){
       ble_data.indication_in_flight = false;
       ble_data.ok_to_send_hr_indications = false;
       ble_data.ok_to_send_o2_indications = false;
+      ble_data.bonded = false;
+      ble_data.bonding_started = false;
 
       /*3. Start advertising on the advertising set with the specified
              * discovery and connection modes.*/
@@ -490,6 +506,16 @@ void handle_ble_event(sl_bt_msg_t *evt){
      /*This event indicates that sl_bt_external_signal(myEvent) was called and returns the myEvent
       * value in the event data structure: evt->data.evt_system_external_signal.extsignals*/
      case sl_bt_evt_system_external_signal_id:
+
+       if(evt->data.evt_system_external_signal.extsignals == EVENT_PB0){
+
+            #if ENABLE_BLE_LOGS
+            LOG_INFO("Button PB0 Pressed.\r\n");
+            #endif
+
+           handle_pb0_pressed();
+       }
+
        break;
 
      /*Indicates either:
@@ -625,9 +651,102 @@ void handle_ble_event(sl_bt_msg_t *evt){
       }
 
       break;
+
+    /*Indicates a user request to display that the new bonding request is received and for the user
+        * to confirm the request.*/
+   case sl_bt_evt_sm_confirm_bonding_id:
+
+     #if ENABLE_BLE_LOGS
+     LOG_INFO("Bonding request received.\r\n");
+     #endif
+
+     /* 1. Accept the bonding request*/
+     rc = sl_bt_sm_bonding_confirm(ble_data.connectionHandle, 1);
+     if(rc != SL_STATUS_OK){
+         LOG_ERROR("Bluetooth: Accepting bonding confirm error = %d\r\n", (unsigned int) rc);
+     }
+
+     /* 2. Enable the bonding started flag.*/
+     ble_data.bonding_started = true;
+
+     break;
+
+   /*Indicates a request for passkey display and confirmation by the user.*/
+   case sl_bt_evt_sm_confirm_passkey_id:
+
+     #if ENABLE_BLE_LOGS
+     LOG_INFO("Passkey received.\r\n");
+     #endif
+
+     passkey = evt->data.evt_sm_confirm_passkey.passkey;
+
+     displayPrintf(DISPLAY_ROW_PASSKEY, "Passkey=%06d", passkey);
+     displayPrintf(DISPLAY_ROW_ACTION, "Confirm with PB0");
+
+     break;
+
+   /*Triggered when the pairing or bonding procedure is successfully
+    * completed.*/
+  case sl_bt_evt_sm_bonded_id:
+
+    #if ENABLE_BLE_LOGS
+    LOG_INFO("Bonding successed!\r\n");
+    #endif
+
+    displayPrintf(DISPLAY_ROW_CONNECTION, "Bonded");
+
+    break;
+
+  /*This event is triggered if the pairing or bonding procedure fails.*/
+  case sl_bt_evt_sm_bonding_failed_id:
+
+    #if ENABLE_BLE_LOGS
+    LOG_INFO("Bonding failed!\r\n");
+    #endif
+
+    break;
 #endif
 
   }// switch
+
+}
+
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to handle PB0 button press related cation
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
+void handle_pb0_pressed(void){
+
+  sl_status_t rc;
+  bool curr_pb0_state = get_pbo_val();
+
+  /*Button pressed state*/
+  if(curr_pb0_state == true){
+
+    /*If not bonded and button is pressed, confirm the passkey*/
+    if(ble_data.connection_open == true &&
+        ble_data.bonded == false &&
+        ble_data.bonding_started == true){
+
+        rc = sl_bt_sm_passkey_confirm(ble_data.connectionHandle, 1);
+        if(rc != SL_STATUS_OK){
+            LOG_ERROR("Bluetooth: Passkey confirmation error = %d\r\n", (unsigned int) rc);
+        }
+
+        ble_data.bonded = true;
+        ble_data.bonding_started = false;
+
+        /*Clear passkey LCD prints*/
+        displayPrintf(DISPLAY_ROW_PASSKEY, "");
+        displayPrintf(DISPLAY_ROW_ACTION, "");
+
+    }
+
+    //displayPrintf(DISPLAY_ROW_9, "Button Pressed");
+
+  }
 
 }
 

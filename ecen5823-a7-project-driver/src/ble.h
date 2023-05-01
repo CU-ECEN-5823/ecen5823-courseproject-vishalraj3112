@@ -39,6 +39,8 @@ typedef struct {
  bool indication_in_flight;          // true when an indication is in flight
  bool ok_to_send_hr_indications;     // true when client enabled heart rate indications
  bool ok_to_send_o2_indications;     // true when client enabled Sp02 indications
+ bool bonded;
+ bool bonding_started;
 
  // values unique for client
  uint8_t myAddressType;

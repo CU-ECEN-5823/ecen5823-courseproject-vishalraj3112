@@ -36,6 +36,12 @@
 
 static uint32_t myEvents = 0;
 
+typedef enum{
+  stateDevInit,
+  stateDevSetMode,
+  stateDevSetDone
+}State_DevMode_t;
+
   typedef enum {
     stateIdle_max,
     stateSensorCheck,
@@ -368,6 +374,9 @@ void set_device_mode(sl_bt_msg_t *evt){
   uint32_t ext_sig = 0;
   static bool init_mode = true;
 
+  ble_data_struct_t* ble_params = get_ble_data_struct();
+  bool bonded_state = ble_params->bonded;
+
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
       ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
@@ -377,18 +386,51 @@ void set_device_mode(sl_bt_msg_t *evt){
   bool pb0_val = get_pbo_val();
   bool pb1_val = get_pb1_val();
 
-  if(pb0_val == true && init_mode == true){
-      dev_mode = TRIGGER_MODE;
-      init_mode = false;
-  }else if(pb1_val == true && init_mode == true){
-      dev_mode = CONTINUOUS_MODE;
-      init_mode = false;
+  State_DevMode_t currentState;
+  static State_DevMode_t nextState = stateDevInit;
+
+  /*Switch States*/
+  currentState = nextState;
+
+  switch(currentState){
+
+    case stateDevInit:
+
+      nextState = stateDevInit;
+
+      if(bonded_state == true){
+       nextState = stateDevSetMode;
+       displayPrintf(DISPLAY_ROW_ACTION, "PB0 for Trig Md");
+       displayPrintf(DISPLAY_ROW_8, "PB1 for Cont md");
+      }
+      break;
+
+    case stateDevSetMode:
+
+      nextState = stateDevSetMode;
+
+      if(pb0_val == true){
+          dev_mode = TRIGGER_MODE;
+          nextState = stateDevSetDone;
+      }else if(pb1_val == true){
+          dev_mode = CONTINUOUS_MODE;
+          nextState = stateDevSetDone;
+      }
+
+      break;
+
+    case stateDevSetDone:
+      nextState = stateDevSetDone;
+      //Do nothing
+      break;
+
   }
 
 }
 
 void mode_state_machine(sl_bt_msg_t *evt){
 
+  //Go ahead only, if bonding completed
   if(dev_mode == TRIGGER_MODE){
       trig_mode_state_machine(evt);
   }else if(dev_mode == CONTINUOUS_MODE){
