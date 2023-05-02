@@ -120,56 +120,6 @@ void schedulerSetEventUF(){
   CORE_EXIT_CRITICAL();
 }
 
-void schedulerSetEventUFConf(){
-
-  CORE_DECLARE_IRQ_STATE;
-
-  CORE_ENTER_CRITICAL();
-
-  myEvents |= EVENT_LETIMER_UF_CONF;
-
-  CORE_EXIT_CRITICAL();
-
-}
-
-void schedulerSetEventComp1Conf(){
-
-  CORE_DECLARE_IRQ_STATE;
-
-  CORE_ENTER_CRITICAL();
-
-  myEvents |= EVENT_LETIMER_COMP1_CONF;
-
-  CORE_EXIT_CRITICAL();
-}
-
-uint32_t getNextEvent(){
-
-  CORE_DECLARE_IRQ_STATE;
-
-  uint32_t retEvent;
-
-  retEvent = myEvents;
-
-  CORE_ENTER_CRITICAL();
-
-  if(myEvents & EVENT_LETIMER_UF_CONF){
-
-      retEvent = EVENT_LETIMER_UF_CONF;
-      myEvents &= ~EVENT_LETIMER_UF_CONF;
-
-  }else if(myEvents & EVENT_LETIMER_COMP1_CONF){
-
-      retEvent = EVENT_LETIMER_COMP1_CONF;
-      myEvents &= ~EVENT_LETIMER_COMP1_CONF;
-
-  }
-
-  CORE_EXIT_CRITICAL();
-
-  return retEvent;
-}
-
 // ---------------------------------------------------------------------
 // Public function
 // This function is used to set the LETIMER0 Comp1 event
@@ -369,6 +319,13 @@ void discovery_state_machine(sl_bt_msg_t *evt){
 
 #elif (DEVICE_IS_BLE_SERVER == 1)
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to set the device mode : Trigger or Continuous
+// mode.
+// @param BT stack msg context
+// Returns None
+// ---------------------------------------------------------------------
 void set_device_mode(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
@@ -428,6 +385,13 @@ void set_device_mode(sl_bt_msg_t *evt){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function runs the specific mode state machine, depending on
+// user selection.
+// @param BT stack msg context
+// Returns None
+// ---------------------------------------------------------------------
 void mode_state_machine(sl_bt_msg_t *evt){
 
   //Go ahead only, if bonding completed
@@ -439,6 +403,13 @@ void mode_state_machine(sl_bt_msg_t *evt){
 
 }
 
+// ---------------------------------------------------------------------
+// Private function
+// This is the state machine for trigger mode, runs when trigger mode is
+// selected.
+// @param BT stack msg context
+// Returns None
+// ---------------------------------------------------------------------
 void trig_mode_state_machine(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;
@@ -514,6 +485,13 @@ void trig_mode_state_machine(sl_bt_msg_t *evt){
 
 }
 
+// ---------------------------------------------------------------------
+// Private function
+// This is the state machine for continuous mode, runs when continuous
+// mode is selected.
+// @param BT stack msg context
+// Returns None
+// ---------------------------------------------------------------------
 void cont_mode_state_machine(sl_bt_msg_t *evt){
 
   uint32_t ext_sig = 0;

@@ -33,7 +33,7 @@
 
 #define MAX32664_DEVICE_ADDR    0xAA
 #define SENSOR_ENABLE_SLEEP_US  20000
-#define DEFAULT_CMD_SLEEP_US    600//6000
+#define DEFAULT_CMD_SLEEP_US    600//6000// should be 6ms
 
 // Function prototypes
 void I2C0_init();
@@ -58,5 +58,6 @@ int sh_enable_maxim_fast(uint8_t mode);
 int get_fifo_no_samples(uint8_t* no_samples);
 uint16_t get_heart_rate_value();
 uint16_t get_spo2_value();
+void led_finger_status();
 
 #endif /* SRC_I2C_H_ */

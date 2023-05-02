@@ -69,6 +69,13 @@ void I2C0_init(){
 
 }// I2C0_init()
 
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to initialize the I2C0 and configure it for
+// Max 3266 sensor hub.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
 void I2C0_init_max(){
 
   //uint32_t i2c_bus_freq;
@@ -127,7 +134,14 @@ void I2C_write(){
 
 } //I2C_write()
 
-//This should be able to do a multi byte write
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to perform I2C write command for Max 3266.
+// @param slave_addr - Slave address to write the command.
+// @param cmd_byte - Buffer of the command to write.
+// @param cmd_len - Length of the buffer of write command.
+// Returns None
+// ---------------------------------------------------------------------
 void I2C_Write_Max(uint8_t slave_addr, uint8_t* cmd_byte, uint16_t cmd_len){
 
   I2C_TransferReturn_TypeDef transferStatus;
@@ -188,6 +202,14 @@ void I2C_read(){
 
 } //I2C_read()
 
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to perform I2C write command for Max 3266.
+// @param slave_addr - Slave address to write the command.
+// @param cmd_byte - Buffer to store the read data.
+// @param cmd_len - Length of the buffer of read data.
+// Returns None
+// ---------------------------------------------------------------------
 void I2C_read_max(uint8_t slave_addr, uint8_t* rxbuf, uint16_t rxbuf_size){
 
   I2C_TransferReturn_TypeDef transferStatus;
@@ -215,7 +237,17 @@ void I2C_read_max(uint8_t slave_addr, uint8_t* rxbuf, uint16_t rxbuf_size){
 
 }
 
-//Time in MS
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to read the data from Max 3266.
+// @param cmd_bytes - buffer to the command to write.
+// @param cmd_bytes_len - length of the buffer to write command.
+// @param rxbuf - buffer to store the read data.
+// @param rxbuf_size - length of the read data buffer.
+// @param sleep_time - Delay to wait for response after command write in
+//                     uS.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int max_sh_read_cmd(uint8_t *cmd_bytes, uint16_t cmd_bytes_len,
                      uint8_t *rxbuf, uint16_t rxbuf_size,
                      uint16_t sleep_time){
@@ -232,6 +264,15 @@ int max_sh_read_cmd(uint8_t *cmd_bytes, uint16_t cmd_bytes_len,
   return (int) rxbuf[0];
 }
 
+// ---------------------------------------------------------------------
+// Private function
+// This function is used to send data to Max 3266.
+// @param txbuf - buffer to the command to write.
+// @param txbuf_len - length of the buffer to write command.
+// @param sleep_time - Delay to wait for response after command write in
+//                     uS.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int max_sh_write_cmd(uint8_t *txbuf,
                        int txbuf_len,
                          int sleep_time){
@@ -250,6 +291,14 @@ int max_sh_write_cmd(uint8_t *txbuf,
   return (int) status_byte;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to get the Max 3266 device mode
+// - 0x00: Application operating mode.
+// - 0x08: Bootloader operating mode.
+// @param device_mode - reference to store the device mode.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int get_device_mode(uint8_t* device_mode){
 
   uint8_t ByteSeq[] = {0x02, 0x00}, rxbuf[2] = {0};
@@ -262,6 +311,12 @@ int get_device_mode(uint8_t* device_mode){
   return status;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to get the Max 3266 current sensor status.
+// @param None
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int get_sensor_hub_status(){
 
   uint8_t ByteSeq[] = {0x00, 0x00}, rxbuf[2] = {0};
@@ -272,6 +327,12 @@ int get_sensor_hub_status(){
   return (int) rxbuf[1];
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function sets the data type required - Algo or sensor data.
+// @param None
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_set_data_type(uint8_t val){
 
   uint8_t ByteSeq[] = {0x10, 0x00, val};
@@ -282,6 +343,13 @@ int sh_set_data_type(uint8_t val){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to set the threshold for FIFO almost full indication from 0x01
+// to 0xFF.
+// @param None
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_set_fifo_thresh(uint8_t thresh_val){
 
   uint8_t ByteSeq[] = {0x10, 0x01, thresh_val};
@@ -292,6 +360,12 @@ int sh_set_fifo_thresh(uint8_t thresh_val){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to enable the Max 3266 sensor hub.
+// @param index to the specific sensor to enable MAXxxxx.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_enable(uint8_t index){
 
     uint8_t ByteSeq[] = {0x44, index, 0x01};
@@ -301,6 +375,12 @@ int sh_enable(uint8_t index){
     return status;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to enable the Max 3266 sensor hub specific algorithm required.
+// @param algo_idx to the specific algorithm to enable - AGC/AEC/WHRM.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_enable_algo(uint8_t algo_idx){
 
   uint8_t ByteSeq[] = {0x52, algo_idx, 0x01};
@@ -310,6 +390,13 @@ int sh_enable_algo(uint8_t algo_idx){
   return status;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to enable/disable the WHRM, MaximFast algorithm.
+// @param mode 0: disable MaximFast algo.
+//             1: enable MaximFast algo.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_enable_maxim_fast(uint8_t mode){
 
   uint8_t ByteSeq[] = {0x52, 0x02, mode};
@@ -320,6 +407,12 @@ int sh_enable_maxim_fast(uint8_t mode){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to get the current number of samples to average.
+// @param no_samples reference to store the result of this command.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int get_sh_no_samples(uint8_t * no_samples){
 
   uint8_t ByteSeq[] = {0x51, 0x00, 0x03}, rxbuf[2] = {0};
@@ -332,6 +425,12 @@ int get_sh_no_samples(uint8_t * no_samples){
   return status;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to get the current number of samples in the output FIFO.
+// @param no_samples reference to store the result of this command.
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int get_fifo_no_samples(uint8_t* no_samples){
 
   uint8_t ByteSeq[] = {0x12, 0x00}, rxbuf[2] = {0};
@@ -344,6 +443,12 @@ int get_fifo_no_samples(uint8_t* no_samples){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Used to get the 6 bytes output sensor FIFO + 1 command status byte.
+// @param None
+// Returns - command response status byte.
+// ---------------------------------------------------------------------
 int sh_read_output_fifo(){
 
   uint8_t ByteSeq[] = {0x12, 0x01};
@@ -354,7 +459,12 @@ int sh_read_output_fifo(){
 
 }
 
-//Test
+// ---------------------------------------------------------------------
+// Public function
+// Function to process and dump the sensor values on terminal.
+// @param None
+// Returns - None
+// ---------------------------------------------------------------------
 void dump_op_fifo_data(){
 
   uint16_t heart_rate = 0;
@@ -386,6 +496,42 @@ void dump_op_fifo_data(){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Function to indicate Max3266 finger status on LEDs.
+// 0x00: No object detected.
+// 0x01: Object detected.
+// 0x02: Object other than finger detected.
+// 0x03: Finger detected.
+// @param None
+// Returns - None
+// ---------------------------------------------------------------------
+void led_finger_status(){
+
+  uint8_t status = op_fifo_buf[6];
+
+  if(status == 0){
+      gpioLed0SetOff();
+      gpioLed1SetOff();
+  }else if(status == 1){//object detected
+      gpioLed1SetOn();
+      gpioLed0SetOff();
+  }else if(status == 2){//object other than finger detected
+      gpioLed0SetOn();
+      gpioLed1SetOff();
+  }else if(status == 3){//finger detected
+      gpioLed0SetOn();
+      gpioLed1SetOn();
+  }
+
+}
+
+// ---------------------------------------------------------------------
+// Public function
+// Function to get the processed heart rate value.
+// @param None
+// Returns - heart rate in BPM.
+// ---------------------------------------------------------------------
 uint16_t get_heart_rate_value(){
 
   uint16_t heart_rate = 0;
@@ -401,6 +547,12 @@ uint16_t get_heart_rate_value(){
   return heart_rate;
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// Function to get the processed Sp02 value.
+// @param None
+// Returns - Spo2 level in 0-100% range.
+// ---------------------------------------------------------------------
 uint16_t get_spo2_value(){
 
   uint16_t Spo2 = 0;

@@ -13,6 +13,13 @@
 #include "timers.h"
 #include "ble.h"
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to initialize the Max 3266 sensor hub for setting
+// modes, enable sensor, set algorithms etc.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
 void init_max_3266(){
 
   int status;
@@ -20,7 +27,7 @@ void init_max_3266(){
   timerWaitUs_polled(1100000);//Wait for 1.1s at the start
 
   //Enter EM1 at start for I2C transfers
-  //sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1); //no difference
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 
   uint8_t device_mode;
   status = get_device_mode(&device_mode);
@@ -76,7 +83,7 @@ void init_max_3266(){
   }
 
   //Remove EM1 requirement
-  //sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1); //no difference
+  sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 
   timerWaitUs_polled(1000000);//Wait 1 sec
 
@@ -90,6 +97,14 @@ void init_max_3266(){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to read the Max 3266 for heart rate and Spo2
+// for single cycle and also send these values to client by sending
+// command to Ble stack.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
 void read_max_3266_single(sl_bt_msg_t *evt){
 
   int status;
@@ -104,7 +119,7 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   ble_data_struct_t* ble_params = get_ble_data_struct();
 
   //Enter EM1 at start for I2C transfers
-  //sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1); //no difference
+  sl_power_manager_add_em_requirement(SL_POWER_MANAGER_EM1);
 
   //1. Get sensor hub status
   status = get_sensor_hub_status();
@@ -132,22 +147,25 @@ void read_max_3266_single(sl_bt_msg_t *evt){
   }
 
   //Remove EM1 requirement
-  //sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1); //no difference
+  sl_power_manager_remove_em_requirement(SL_POWER_MANAGER_EM1);
 
   //4. Dump the read FIFO data to terminal.
   dump_op_fifo_data();
 
+  //5. Run Finger status LED logic.
+  led_finger_status();
+
   /*Stop sending heart rate if BLE connection is closed or
    * HR indications are disabled.*/
   if(ble_params->connection_open == true && ble_params->ok_to_send_hr_indications == true){
-      //5. Send only heart rate to client
+      //6. Send only heart rate to client
       send_heart_rate_ble();
   }
 
   /*Stop sending Spo2 if BLE connection is closed or
    * Spo2 indications are disabled.*/
   if(ble_params->connection_open == true && ble_params->ok_to_send_o2_indications == true){
-    //6. Send SpO2 value to client
+    //7. Send SpO2 value to client
     send_spo2_ble();
   }
 

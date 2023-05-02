@@ -59,12 +59,10 @@ void LETIMER0_IRQHandler(void){
       //Increment ms counter every 1ms
       counter_ms++;
       schedulerSetEventUF();
-      schedulerSetEventUFConf();
   }
 
   if(flags & LETIMER_IF_COMP1){
       schedulerSetEventComp1();
-      schedulerSetEventComp1Conf();
       /*Disable COMP1 Interrupt*/
       //LETIMER_IntDisable(LETIMER0, LETIMER_IEN_COMP1);
   }

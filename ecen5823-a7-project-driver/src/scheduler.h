@@ -41,11 +41,8 @@ typedef enum {
 }events_t;
 
 // Function prototypes
-uint32_t getNextEvent();
 void tempReadStateMachine();
 void schedulerSetEventUF();
-void schedulerSetEventUFConf();
-void schedulerSetEventComp1Conf();
 void schedulerSetEventComp1();
 void schedulerSetI2CTransferComp();
 void schedulerSetTempMeasureEvent();

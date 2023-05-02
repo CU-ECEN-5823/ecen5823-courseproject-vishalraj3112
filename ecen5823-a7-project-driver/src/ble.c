@@ -835,6 +835,13 @@ void send_temp_ble(){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to write the Gatt DB and send the final
+// heart rate indication to the client.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
 void send_heart_rate_ble(){
 
   //1. Get the current heart rate value
@@ -897,6 +904,13 @@ void send_heart_rate_ble(){
 
 }
 
+// ---------------------------------------------------------------------
+// Public function
+// This function is used to write the Gatt DB and send the final
+// Spo2 indication to the client.
+// @param None
+// Returns None
+// ---------------------------------------------------------------------
 void send_spo2_ble(){
 
   //1. Get the current heart rate value
