@@ -5,7 +5,7 @@
  *      Author: vishal
  */
 
-#define INCLUDE_LOG_DEBUG     1
+#define INCLUDE_LOG_DEBUG     0
 
 #include "max_3266.h"
 #include "i2c.h"
@@ -108,10 +108,9 @@ void init_max_3266(){
 void read_max_3266_single(sl_bt_msg_t *evt){
 
   int status;
-  uint32_t ext_sig = 0;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
-      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+      //ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
       return;
   }

@@ -17,7 +17,7 @@
  * @resources Lecture Slides and EFR32xG13 Reference Manual
  *
  */
-#define INCLUDE_LOG_DEBUG     1
+#define INCLUDE_LOG_DEBUG     0
 
 #include "i2c.h"
 #include "gpio.h"

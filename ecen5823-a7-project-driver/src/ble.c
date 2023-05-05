@@ -27,6 +27,7 @@
 #include "scheduler.h"
 #include "lcd.h"
 #include "ble_device_type.h"
+#include "irq.h"
 #include <math.h>
 
 // Server relate

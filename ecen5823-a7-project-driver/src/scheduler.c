@@ -18,7 +18,7 @@
  *
  */
 
-#define INCLUDE_LOG_DEBUG     1
+#define INCLUDE_LOG_DEBUG     0
 
 #include "scheduler.h"
 #include "em_cmu.h"
@@ -34,8 +34,6 @@
 
 #if DEVICE_IS_BLE_SERVER
 
-static uint32_t myEvents = 0;
-
 typedef enum{
   stateDevInit,
   stateDevSetMode,
@@ -45,13 +43,7 @@ typedef enum{
   typedef enum {
     stateIdle_max,
     stateSensorCheck,
-//    set_data_type,
-//    set_thresh,
-//    enable_sh,
-//    enable_algo,
-//    enable_maximFast,
     start_sh_read,
-//    invalid_state
   }State_max_t;
 
   typedef enum uint32_t {
@@ -328,14 +320,12 @@ void discovery_state_machine(sl_bt_msg_t *evt){
 // ---------------------------------------------------------------------
 void set_device_mode(sl_bt_msg_t *evt){
 
-  uint32_t ext_sig = 0;
-  static bool init_mode = true;
 
   ble_data_struct_t* ble_params = get_ble_data_struct();
   bool bonded_state = ble_params->bonded;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
-      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+      //ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
       return;
   }
@@ -412,11 +402,10 @@ void mode_state_machine(sl_bt_msg_t *evt){
 // ---------------------------------------------------------------------
 void trig_mode_state_machine(sl_bt_msg_t *evt){
 
-  uint32_t ext_sig = 0;
-  static cycle_count = 0;
+  static int cycle_count = 0;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
-      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+      //ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
       return;
   }
@@ -494,10 +483,9 @@ void trig_mode_state_machine(sl_bt_msg_t *evt){
 // ---------------------------------------------------------------------
 void cont_mode_state_machine(sl_bt_msg_t *evt){
 
-  uint32_t ext_sig = 0;
 
   if(SL_BT_MSG_ID(evt->header) ==  sl_bt_evt_system_external_signal_id){
-      ext_sig =  evt->data.evt_system_external_signal.extsignals;
+      //ext_sig =  evt->data.evt_system_external_signal.extsignals;
   }else{
       return;
   }

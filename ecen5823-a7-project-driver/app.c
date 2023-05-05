@@ -64,6 +64,7 @@
 #include "src/scheduler.h"
 #include "src/i2c.h"
 #include "src/ble.h"
+#include "src/max_3266.h"
 
 
 // Students: Here is an example of how to correctly include logging functions in
@@ -74,7 +75,7 @@
 //           to call one of the LOG_***() functions from.
 
 // Include logging specifically for this .c file
-#define INCLUDE_LOG_DEBUG 1
+#define INCLUDE_LOG_DEBUG 0
 #include "src/log.h"
 
 
@@ -257,7 +258,6 @@ void sl_bt_on_event(sl_bt_msg_t *evt)
 
   set_device_mode(evt);
   mode_state_machine(evt);
-  //temperature_state_machine(evt);    // put this code in scheduler.c/.h
 
 #else
    // CLIENT
